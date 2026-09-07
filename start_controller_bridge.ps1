@@ -50,10 +50,10 @@ try {
                     $joyY = [BitConverter]::ToInt16($buffer, 10)
                     $btn  = $buffer[12]
 
-                    $bTrig = ($btn -band 1) -ne 0 ? "ON " : "off"
-                    $bGrip = ($btn -band 2) -ne 0 ? "ON " : "off"
-                    $bRec  = ($btn -band 4) -ne 0 ? "ON " : "off"
-                    $bJoy  = ($btn -band 8) -ne 0 ? "ON " : "off"
+                    $bTrig = if (($btn -band 1) -ne 0) { "ON " } else { "off" }
+                    $bGrip = if (($btn -band 2) -ne 0) { "ON " } else { "off" }
+                    $bRec  = if (($btn -band 4) -ne 0) { "ON " } else { "off" }
+                    $bJoy  = if (($btn -band 8) -ne 0) { "ON " } else { "off" }
 
                     Write-Host "`r[LIVE ESP32] JOY: X=$("{0,4}" -f $joyX) Y=$("{0,4}" -f $joyY) | BTNS: [Trigger:$bTrig Grip:$bGrip Recenter:$bRec] | QUAT: ($("{0,0:F2}" -f ($rawW/16384.0)),$("{0,0:F2}" -f ($rawX/16384.0)))   " -NoNewline -ForegroundColor Cyan
                 }
