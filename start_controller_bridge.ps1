@@ -1,13 +1,31 @@
+param(
+    [string]$Port = ""
+)
+
 Write-Host "=====================================================" -ForegroundColor Cyan
 Write-Host "  JAKKHO DIY VR HAND CONTROLLER - LIVE USB BRIDGE   " -ForegroundColor Yellow
 Write-Host "=====================================================" -ForegroundColor Cyan
 
-$comPort = "COM5"
 $baudRate = 115200
 $udpHost = "127.0.0.1"
 $udpPort = 8888
 
-Write-Host "[BRIDGE] Connecting to ESP32 on $comPort at $baudRate baud..." -ForegroundColor Gray
+$availablePorts = [System.IO.Ports.SerialPort]::GetPortNames()
+
+if ([string]::IsNullOrWhiteSpace($Port)) {
+    if ($availablePorts -contains "COM5") {
+        $comPort = "COM5"
+    } elseif ($availablePorts.Count -gt 0) {
+        $comPort = $availablePorts[0]
+    } else {
+        $comPort = "COM5"
+    }
+} else {
+    $comPort = $Port
+}
+
+Write-Host "[BRIDGE] Available COM Ports: $($availablePorts -join ', ')" -ForegroundColor Gray
+Write-Host "[BRIDGE] Attempting connection to ESP32 on $comPort at $baudRate baud..." -ForegroundColor Gray
 
 $port = $null
 $udp = $null

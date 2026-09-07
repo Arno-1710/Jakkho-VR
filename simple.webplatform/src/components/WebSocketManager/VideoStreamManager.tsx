@@ -48,8 +48,8 @@ const VideoStreamManager = ({ needsInteractivity, selectedCanvas, hideInfos }: V
 				{streamCount === 0 && (
 					<div style={{ width: tileWidth, height: tileHeight }} className="flex items-center justify-center">
 						<PlayerScreenCanvas
-							isPlaceholder
-							id="placeholder"
+							id="unity_pc"
+							streamUrl="http://localhost:8085/live.mjpg"
 							needsInteractivity={needsInteractivity}
 							hideInfos={hideInfos}
 						/>

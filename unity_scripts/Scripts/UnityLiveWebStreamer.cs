@@ -22,9 +22,12 @@ namespace DIYVR
     /// 2. WebSocket Streamer (ws://127.0.0.1:8082) for JAKKHO Web Platform integration.
     /// 3. Zero external DLL dependencies - uses standard .NET 2.1 & Unity Engine APIs.
     /// </summary>
-    [RequireComponent(typeof(Camera))]
     public class UnityLiveWebStreamer : MonoBehaviour
     {
+        [Header("Target Camera (Optional)")]
+        [Tooltip("Leave empty to auto-detect Main Camera")]
+        public Camera targetCamera;
+
         [Header("HTTP MJPEG Wi-Fi Server")]
         [Tooltip("Enable built-in HTTP MJPEG server for browser & mobile live viewing")]
         public bool enableHttpMjpegServer = true;
@@ -90,7 +93,14 @@ namespace DIYVR
 
         private void Awake()
         {
-            _camera = GetComponent<Camera>();
+            if (targetCamera != null)
+            {
+                _camera = targetCamera;
+            }
+            else
+            {
+                _camera = GetComponent<Camera>() ?? GetComponentInChildren<Camera>() ?? Camera.main;
+            }
         }
 
         private void Start()
@@ -363,6 +373,25 @@ namespace DIYVR
 
         #region Frame Capture
 
+        private void EnsureResources()
+        {
+            if (_camera == null)
+            {
+                if (targetCamera != null) _camera = targetCamera;
+                else _camera = GetComponent<Camera>() ?? GetComponentInChildren<Camera>() ?? Camera.main;
+                if (_camera == null)
+                {
+                    Camera[] cams = FindObjectsByType<Camera>(FindObjectsSortMode.None);
+                    if (cams.Length > 0) _camera = cams[0];
+                }
+            }
+
+            if (_renderTexture == null || _frameTexture == null)
+            {
+                InitializeTextures();
+            }
+        }
+
         private void LateUpdate()
         {
             _fpsTimer += Time.deltaTime;
@@ -383,14 +412,16 @@ namespace DIYVR
 
         private void CaptureFrame()
         {
-            if (_renderTexture == null || _frameTexture == null || _camera == null) return;
+            EnsureResources();
+            if (_camera == null || _renderTexture == null || _frameTexture == null) return;
 
             RenderTexture currentRT = RenderTexture.active;
             RenderTexture.active = _renderTexture;
 
+            RenderTexture prevTarget = _camera.targetTexture;
             _camera.targetTexture = _renderTexture;
             _camera.Render();
-            _camera.targetTexture = null;
+            _camera.targetTexture = prevTarget;
 
             _frameTexture.ReadPixels(new Rect(0, 0, _renderTexture.width, _renderTexture.height), 0, 0);
             _frameTexture.Apply();
