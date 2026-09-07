@@ -5,19 +5,21 @@ interface PlayerScreenCanvasProps {
 	isPlaceholder?: boolean;
 	needsInteractivity?: boolean;
 	canvas?: HTMLCanvasElement;
+	streamUrl?: string;
 	id?: string;
 	hideInfos?: boolean;
 }
 
 const getDeviceLabel = (rawId: string) => {
 	const str = rawId.toLowerCase();
+	if (str.includes("unity") || str.includes("pc")) return "Unity VR PC (Wi-Fi Live)";
 	if (str.includes("tecno") || str.includes("bg7") || str.includes(".50") || str.includes("50:")) return "Tecno Spark 20C (90Hz)";
 	if (str.includes("samsung") || str.includes("s24") || str.includes("sm-s92") || str.includes(".51") || str.includes("51:")) return "Samsung Galaxy S24 (120Hz)";
 	if (str.includes("quest")) return "Meta Quest (VR)";
 	return `Device: ${rawId}`;
 };
 
-const PlayerScreenCanvas = ({ canvas, id, isPlaceholder, hideInfos, needsInteractivity }: PlayerScreenCanvasProps) => {
+const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, needsInteractivity }: PlayerScreenCanvasProps) => {
 	const ipIdentifier: string = id ? id.split(":")[0].split(".")[id.split(".").length - 1] : "";
 	const canvasref = useRef<HTMLDivElement>(null);
 	const popupref = useRef<HTMLDivElement>(null);
@@ -108,11 +110,23 @@ const PlayerScreenCanvas = ({ canvas, id, isPlaceholder, hideInfos, needsInterac
 				>
 					{!isPlaceholder ? (
 						<>
-							{/* Canvas holder */}
-							<div
-								ref={canvasref}
-								className="w-full h-full object-cover rounded-xl bg-slate-950 flex items-center justify-center overflow-hidden relative"
-							/>
+							{/* Stream view: Either MJPEG image or WebCodecs canvas */}
+							{streamUrl ? (
+								<img
+									src={streamUrl}
+									alt="JAKKHO Live Stream"
+									className="w-full h-full object-contain rounded-xl bg-black"
+									onError={(e) => {
+										// Fallback if stream is temporarily offline
+										(e.target as HTMLElement).style.display = "none";
+									}}
+								/>
+							) : (
+								<div
+									ref={canvasref}
+									className="w-full h-full object-cover rounded-xl bg-slate-950 flex items-center justify-center overflow-hidden relative"
+								/>
+							)}
 
 							{/* Top floating badge */}
 							{!hideInfos && (
@@ -156,11 +170,11 @@ const PlayerScreenCanvas = ({ canvas, id, isPlaceholder, hideInfos, needsInterac
 								JAKKHO Standby Stream
 							</h3>
 							<p className="text-xs text-slate-400 max-w-xs font-mono mb-3">
-								Waiting for Samsung S24 / Tecno Spark 20C / Quest stream via ADB or Wi-Fi...
+								Waiting for Unity PC VR / Samsung S24 / Tecno Spark 20C Wi-Fi stream...
 							</p>
 							<div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-700 text-[11px] font-mono text-slate-300">
 								<span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-								<span>Listening on ws://localhost:8082</span>
+								<span>Listening on http://localhost:8085 / ws://8082</span>
 							</div>
 						</div>
 					)}
