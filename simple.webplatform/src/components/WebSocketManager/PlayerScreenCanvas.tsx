@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { HEADSET_COLOR_CLASS, HEADSET_COLOR_NAME } from "../../common/constants";
 
 interface PlayerScreenCanvasProps {
 	isPlaceholder?: boolean;
@@ -20,10 +19,20 @@ const getDeviceLabel = (rawId: string) => {
 };
 
 const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, needsInteractivity }: PlayerScreenCanvasProps) => {
-	const ipIdentifier: string = id ? id.split(":")[0].split(".")[id.split(".").length - 1] : "";
 	const canvasref = useRef<HTMLDivElement>(null);
 	const popupref = useRef<HTMLDivElement>(null);
+	const stereoRightCanvasRef = useRef<HTMLCanvasElement>(null);
 	const [showPopup, setShowPopup] = useState<boolean>(false);
+	const [isRecording, setIsRecording] = useState<boolean>(false);
+	const [recordDuration, setRecordDuration] = useState<number>(0);
+	const [isStereoMode, setIsStereoMode] = useState<boolean>(false);
+	const [ipdOffset, setIpdOffset] = useState<number>(64); // mm IPD (default 64mm)
+	const [lensZoom, setLensZoom] = useState<number>(1.0); // 0.8x - 1.2x
+
+	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+	const recordedChunksRef = useRef<Blob[]>([]);
+	const recordIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+	const animFrameRef = useRef<number | null>(null);
 
 	// Attach the managed canvas to the DOM
 	useEffect(() => {
@@ -45,13 +54,151 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 		}
 	}, [canvas, showPopup]);
 
+	// Stereo dual-eye canvas mirror loop for WebCodecs canvas
+	useEffect(() => {
+		if (isStereoMode && canvas && stereoRightCanvasRef.current) {
+			const rightCanvas = stereoRightCanvasRef.current;
+			const ctx = rightCanvas.getContext("2d");
+
+			const mirrorLoop = () => {
+				if (ctx && canvas && canvas.width > 0 && canvas.height > 0) {
+					if (rightCanvas.width !== canvas.width || rightCanvas.height !== canvas.height) {
+						rightCanvas.width = canvas.width;
+						rightCanvas.height = canvas.height;
+					}
+					ctx.drawImage(canvas, 0, 0);
+				}
+				animFrameRef.current = requestAnimationFrame(mirrorLoop);
+			};
+
+			mirrorLoop();
+			return () => {
+				if (animFrameRef.current) {
+					cancelAnimationFrame(animFrameRef.current);
+				}
+			};
+		}
+	}, [isStereoMode, canvas]);
+
 	if (!id) {
 		return null;
 	}
 
+	// 1-Click Live Video Session Recording
+	const handleStartRecording = (e: React.MouseEvent) => {
+		e.stopPropagation();
+		let stream: MediaStream | null = null;
+		if (canvas) {
+			stream = canvas.captureStream(30);
+		} else if (canvasref.current?.querySelector("canvas")) {
+			stream = canvasref.current.querySelector("canvas")!.captureStream(30);
+		}
+
+		if (!stream) {
+			// For MJPEG image feeds, we capture via synthetic canvas
+			const img = canvasref.current?.querySelector("img");
+			if (img) {
+				const tempCanvas = document.createElement("canvas");
+				tempCanvas.width = img.naturalWidth || 1280;
+				tempCanvas.height = img.naturalHeight || 720;
+				const ctx = tempCanvas.getContext("2d");
+				if (ctx) {
+					const fps = 30;
+					stream = tempCanvas.captureStream(fps);
+					const drawInterval = setInterval(() => {
+						try {
+							ctx.drawImage(img, 0, 0, tempCanvas.width, tempCanvas.height);
+						} catch {
+							clearInterval(drawInterval);
+						}
+					}, 1000 / fps);
+
+					const origStop = () => clearInterval(drawInterval);
+					startRecordingWithStream(stream, origStop);
+					return;
+				}
+			}
+			alert("Live stream capture not available yet.");
+			return;
+		}
+
+		startRecordingWithStream(stream);
+	};
+
+	const startRecordingWithStream = (stream: MediaStream, onCleanup?: () => void) => {
+		try {
+			recordedChunksRef.current = [];
+			const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
+				? "video/webm;codecs=vp9"
+				: MediaRecorder.isTypeSupported("video/webm;codecs=vp8")
+				? "video/webm;codecs=vp8"
+				: "video/webm";
+
+			const recorder = new MediaRecorder(stream, { mimeType: mime });
+			mediaRecorderRef.current = recorder;
+
+			recorder.ondataavailable = (event) => {
+				if (event.data && event.data.size > 0) {
+					recordedChunksRef.current.push(event.data);
+				}
+			};
+
+			recorder.onstop = () => {
+				if (onCleanup) onCleanup();
+				const blob = new Blob(recordedChunksRef.current, { type: "video/webm" });
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement("a");
+				a.href = url;
+				a.download = `JAKKHO_VR_Session_${(id || "feed").replace(/[:.]/g, "_")}_${Date.now()}.webm`;
+				a.click();
+				URL.revokeObjectURL(url);
+			};
+
+			recorder.start(500);
+			setIsRecording(true);
+			setRecordDuration(0);
+			recordIntervalRef.current = setInterval(() => {
+				setRecordDuration((prev) => prev + 1);
+			}, 1000);
+		} catch (err) {
+			console.warn("MediaRecorder start failed:", err);
+		}
+	};
+
+	const handleStopRecording = (e: React.MouseEvent) => {
+		e.stopPropagation();
+		if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+			mediaRecorderRef.current.stop();
+		}
+		if (recordIntervalRef.current) {
+			clearInterval(recordIntervalRef.current);
+			recordIntervalRef.current = null;
+		}
+		setIsRecording(false);
+	};
+
+	// Instant Snapshot
 	const handleSnapshot = (e: React.MouseEvent) => {
 		e.stopPropagation();
-		if (!canvas) return;
+		if (!canvas) {
+			const img = canvasref.current?.querySelector("img");
+			if (img) {
+				const c = document.createElement("canvas");
+				c.width = img.naturalWidth || 1280;
+				c.height = img.naturalHeight || 720;
+				const ctx = c.getContext("2d");
+				if (ctx) {
+					ctx.drawImage(img, 0, 0);
+					const url = c.toDataURL("image/png");
+					const a = document.createElement("a");
+					a.href = url;
+					a.download = `JAKKHO_Snap_${(id || "feed").replace(/[:.]/g, "_")}_${Date.now()}.png`;
+					a.click();
+					return;
+				}
+			}
+			return;
+		}
 		try {
 			const url = canvas.toDataURL("image/png");
 			const a = document.createElement("a");
@@ -63,33 +210,138 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 		}
 	};
 
+	// Direct Mobile Fullscreen Mode for Google Cardboard
+	const handleEnterFullscreenVR = (e: React.MouseEvent) => {
+		e.stopPropagation();
+		setIsStereoMode(true);
+		setShowPopup(true);
+		if (!document.fullscreenElement) {
+			document.documentElement.requestFullscreen().catch(() => {});
+		}
+	};
+
+	const formatTime = (secs: number) => {
+		const m = Math.floor(secs / 60).toString().padStart(2, "0");
+		const s = (secs % 60).toString().padStart(2, "0");
+		return `${m}:${s}`;
+	};
+
 	return (
 		<>
-			{/* Popup Modal */}
+			{/* Popup Modal / Fullscreen Stereo VR Dialog */}
 			{showPopup && (
 				<div
-					className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-6"
+					className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-2 md:p-4"
 					onClick={() => setShowPopup(false)}
 				>
 					<div
-						className="relative bg-slate-900 border-2 border-cyan-500/50 rounded-2xl p-4 shadow-2xl flex flex-col items-center max-w-[95vw] max-h-[95vh]"
+						className="relative bg-slate-900 border-2 border-cyan-500/50 rounded-2xl p-4 shadow-2xl flex flex-col items-center max-w-[98vw] max-h-[98vh] w-full"
 						onClick={(e) => e.stopPropagation()}
 					>
+						{/* Modal Top Bar */}
 						<div className="w-full flex items-center justify-between pb-3 mb-2 border-b border-slate-800">
 							<div className="flex items-center gap-2">
-								<span className="font-mono font-bold text-cyan-400">{getDeviceLabel(id)}</span>
-								<span className="text-xs text-slate-400 font-mono">({id})</span>
+								<span className="font-mono font-bold text-cyan-400 text-sm md:text-base">{getDeviceLabel(id)}</span>
+								<span className="text-xs text-slate-400 font-mono hidden sm:inline">({id})</span>
+								{isStereoMode && (
+									<span className="px-2 py-0.5 rounded bg-purple-500/20 border border-purple-500/40 text-purple-300 font-mono text-[10px] font-bold">
+										🥽 3D STEREO VR ACTIVE
+									</span>
+								)}
 							</div>
-							<button
-								type="button"
-								onClick={() => setShowPopup(false)}
-								className="px-3 py-1 bg-red-600/80 hover:bg-red-500 text-white rounded-lg text-xs font-semibold"
-							>
-								Close
-							</button>
+
+							<div className="flex items-center gap-2">
+								{/* IPD Slider when in Stereo mode */}
+								{isStereoMode && (
+									<div className="hidden sm:flex items-center gap-2 bg-slate-950/80 px-3 py-1 rounded-lg border border-purple-500/30 text-xs font-mono text-slate-300">
+										<span>IPD: {ipdOffset}mm</span>
+										<input
+											type="range"
+											min="56"
+											max="72"
+											value={ipdOffset}
+											onChange={(e) => setIpdOffset(Number(e.target.value))}
+											className="w-16 accent-purple-500 cursor-pointer"
+										/>
+										<span className="ml-2">Zoom: {lensZoom.toFixed(1)}x</span>
+										<input
+											type="range"
+											min="0.8"
+											max="1.3"
+											step="0.1"
+											value={lensZoom}
+											onChange={(e) => setLensZoom(Number(e.target.value))}
+											className="w-14 accent-cyan-500 cursor-pointer"
+										/>
+									</div>
+								)}
+
+								<button
+									type="button"
+									onClick={() => setIsStereoMode(!isStereoMode)}
+									className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold border transition-all ${
+										isStereoMode
+											? "bg-purple-600 text-white border-purple-400"
+											: "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
+									}`}
+								>
+									🥽 {isStereoMode ? "Exit Stereo" : "Stereo VR"}
+								</button>
+								<button
+									type="button"
+									onClick={() => setShowPopup(false)}
+									className="px-3 py-1.5 bg-red-600/80 hover:bg-red-500 text-white rounded-lg text-xs font-semibold"
+								>
+									Close
+								</button>
+							</div>
 						</div>
 
-						<div ref={popupref} className="flex items-center justify-center overflow-hidden rounded-xl bg-black" />
+						{/* Modal Video Container */}
+						<div className="w-full flex-1 flex items-center justify-center overflow-hidden rounded-xl bg-black relative">
+							{isStereoMode ? (
+								<div className="w-full h-full grid grid-cols-2 gap-1 items-center justify-center bg-black relative">
+									{/* Center Cardboard Divider Line */}
+									<div className="absolute top-0 bottom-0 left-1/2 w-[2px] bg-slate-800 z-10" />
+
+									{/* Left Eye */}
+									<div className="w-full h-full flex items-center justify-center overflow-hidden relative">
+										<span className="absolute top-2 left-2 px-2 py-0.5 bg-black/70 rounded text-[9px] font-mono text-cyan-400 z-20">
+											LEFT EYE (IPD {ipdOffset}mm)
+										</span>
+										{streamUrl ? (
+											<img
+												src={streamUrl}
+												alt="Left Eye"
+												className="w-full h-full object-contain"
+												style={{ transform: `scale(${lensZoom})` }}
+											/>
+										) : (
+											<div ref={popupref} className="w-full h-full flex items-center justify-center" />
+										)}
+									</div>
+
+									{/* Right Eye */}
+									<div className="w-full h-full flex items-center justify-center overflow-hidden relative">
+										<span className="absolute top-2 left-2 px-2 py-0.5 bg-black/70 rounded text-[9px] font-mono text-purple-400 z-20">
+											RIGHT EYE (IPD {ipdOffset}mm)
+										</span>
+										{streamUrl ? (
+											<img
+												src={streamUrl}
+												alt="Right Eye"
+												className="w-full h-full object-contain"
+												style={{ transform: `scale(${lensZoom})` }}
+											/>
+										) : (
+											<canvas ref={stereoRightCanvasRef} className="w-full h-full object-contain rounded-xl" />
+										)}
+									</div>
+								</div>
+							) : (
+								<div ref={popupref} className="flex items-center justify-center overflow-hidden rounded-xl bg-black max-h-[85vh] w-full" />
+							)}
+						</div>
 					</div>
 				</div>
 			)}
@@ -111,13 +363,22 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 					{!isPlaceholder ? (
 						<>
 							{/* Stream view: Either MJPEG image or WebCodecs canvas */}
-							{streamUrl ? (
+							{isStereoMode ? (
+								<div className="w-full h-full grid grid-cols-2 gap-0.5 bg-black rounded-xl overflow-hidden relative">
+									<div className="absolute top-0 bottom-0 left-1/2 w-[1px] bg-slate-800 z-10" />
+									<div className="w-full h-full border-r border-slate-800 overflow-hidden flex items-center justify-center">
+										{streamUrl ? <img src={streamUrl} alt="Left Eye" className="w-full h-full object-contain" /> : <div ref={canvasref} className="w-full h-full" />}
+									</div>
+									<div className="w-full h-full overflow-hidden flex items-center justify-center">
+										{streamUrl ? <img src={streamUrl} alt="Right Eye" className="w-full h-full object-contain" /> : <canvas ref={stereoRightCanvasRef} className="w-full h-full object-contain" />}
+									</div>
+								</div>
+							) : streamUrl ? (
 								<img
 									src={streamUrl}
 									alt="JAKKHO Live Stream"
 									className="w-full h-full object-contain rounded-xl bg-black"
 									onError={(e) => {
-										// Fallback if stream is temporarily offline
 										(e.target as HTMLElement).style.display = "none";
 									}}
 								/>
@@ -128,20 +389,70 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 								/>
 							)}
 
-							{/* Top floating badge */}
+							{/* Top floating status badges */}
 							{!hideInfos && (
 								<div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none z-20">
 									<div className="px-2.5 py-1 rounded-lg bg-slate-950/85 backdrop-blur-md font-mono text-[11px] font-bold text-white border border-cyan-400/50 shadow-md">
 										{getDeviceLabel(id)}
 									</div>
-									<div className="px-2 py-0.5 rounded-lg bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 font-mono text-[10px] font-semibold">
-										LIVE
+									<div className="flex items-center gap-2">
+										{isRecording && (
+											<div className="px-2.5 py-0.5 rounded-lg bg-red-600/90 border border-red-400 text-white font-mono text-[10px] font-bold flex items-center gap-1 animate-pulse">
+												<span className="w-2 h-2 rounded-full bg-white" />
+												<span>REC {formatTime(recordDuration)}</span>
+											</div>
+										)}
+										<div className="px-2 py-0.5 rounded-lg bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 font-mono text-[10px] font-semibold">
+											LIVE
+										</div>
 									</div>
 								</div>
 							)}
 
-							{/* Hover Quick Action */}
-							<div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex gap-1.5">
+							{/* Hover Quick Action Bar */}
+							<div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex gap-1.5 pointer-events-auto">
+								{isRecording ? (
+									<button
+										type="button"
+										onClick={handleStopRecording}
+										className="px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white rounded text-[10px] font-mono font-bold shadow-lg"
+										title="Stop & Save Recording"
+									>
+										⏹ Stop REC
+									</button>
+								) : (
+									<button
+										type="button"
+										onClick={handleStartRecording}
+										className="px-2 py-1 bg-slate-900/90 hover:bg-red-600 text-white rounded text-[10px] font-mono border border-slate-700"
+										title="Record Session"
+									>
+										⏺ Record
+									</button>
+								)}
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										setIsStereoMode(!isStereoMode);
+									}}
+									className={`px-2 py-1 rounded text-[10px] font-mono border transition-all ${
+										isStereoMode
+											? "bg-purple-600 text-white border-purple-400 font-bold"
+											: "bg-slate-900/90 hover:bg-purple-600 text-white border-slate-700"
+									}`}
+									title="Toggle Cardboard 3D Stereo VR Mode"
+								>
+									🥽 Stereo
+								</button>
+								<button
+									type="button"
+									onClick={handleEnterFullscreenVR}
+									className="px-2 py-1 bg-slate-900/90 hover:bg-purple-600 text-purple-300 rounded text-[10px] font-mono border border-purple-500/40"
+									title="Direct Mobile Fullscreen Cardboard VR"
+								>
+									📱 VR Headset
+								</button>
 								<button
 									type="button"
 									onClick={handleSnapshot}
@@ -185,3 +496,4 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 };
 
 export default PlayerScreenCanvas;
+

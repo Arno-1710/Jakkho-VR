@@ -14,8 +14,12 @@
 **JAKKHO VR** is a modular, zero-wire Virtual Reality ecosystem designed for:
 1. **Wireless Unity Live Streaming**: Broadcast any Unity 3D/VR scene viewport in real-time (60 FPS) over Wi-Fi directly to the web platform with **zero physical cables**.
 2. **Branded Mission Control Web Platform**: A high-tech Vite + React frontend styled with custom white rounded bezel frames, live telemetry visualizers, and multi-device casting.
-3. **DIY VR Hand Controller**: 6-DoF spatial wand powered by an ESP32 microcontroller, MPU-6050 6-Axis DMP fusion, analog thumb joystick, and tactile action buttons communicating via 80Hz binary packets.
-4. **Dual Mobile Headset Support**: Hardware-accelerated WebCodecs H.264/H.265 streaming for Samsung Galaxy S24 (120Hz AMOLED) and Tecno Spark 20C (90Hz LCD).
+3. **🥽 Direct Stereo Cardboard VR Mode**: Dual-eye split-screen rendering with IPD (Interpupillary Distance 56–72mm) and lens zoom tuning for Google Cardboard, BoboVR, and mobile headsets.
+4. **⏺ 1-Click Live Session Recorder & Snapshot**: In-browser hardware-accelerated WebM video recording (`.webm`) with live timer HUD and timestamped 4K snapshots (`.png`).
+5. **⚙️ Calibration Wizard & Zero-Drift Gyro Tare**: Web-based deadzone adjustment, sensitivity gain, axis inversion, and 1-click zero-drift tare for MPU-6050 sensor fusion.
+6. **📊 Real-Time Telemetry & JSON Diagnostic Exporter**: Live FPS counter, latency estimator, packet bitrate monitor, and 1-click JSON session export for research and team grading.
+7. **DIY VR Hand Controller**: 6-DoF spatial wand powered by an ESP32 microcontroller, MPU-6050 6-Axis DMP fusion, analog thumb joystick, and tactile action buttons communicating via 80Hz binary packets.
+8. **Dual Mobile Headset Support**: Hardware-accelerated WebCodecs H.264/H.265 streaming for Samsung Galaxy S24 (120Hz AMOLED) and Tecno Spark 20C (90Hz LCD).
 
 ---
 
@@ -35,14 +39,16 @@ flowchart TD
     end
 
     subgraph Web ["🌐 JAKKHO Web Platform (:5173)"]
-        Streamer -->|Wi-Fi HTTP :8085 /live.mjpg| WebUI[Vite React Platform\nFront Homepage Hub]
-        WebUI --> Frame[JAKKHO White Bezel Viewport\nSnap & Fullscreen Casting]
-        WebUI --> Telemetry[Real-Time Hand Controller\nJoystick & Button Monitor]
+        Streamer -->|Wi-Fi HTTP :8085 /live.mjpg| WebUI[Vite React Platform\nMission Control Hub]
+        WebUI --> Frame[JAKKHO White Bezel Viewport\n🥽 Stereo VR • ⏺ Record • 📷 Snap]
+        WebUI --> Calib[⚙️ Calibration Wizard\nZero-Drift Gyro Tare • Deadzone]
+        WebUI --> Telemetry[📊 Real-Time Telemetry HUD\nFPS • Latency • JSON Exporter]
     end
 
     subgraph Mobile ["📱 Mobile Headsets"]
-        WebUI -->|WebCodecs H.265| S24[Samsung Galaxy S24\n120Hz Cardboard XR]
-        WebUI -->|ADB TCP/IP| Spark[Tecno Spark 20C\n90Hz Cardboard XR]
+        WebUI -->|Cardboard 3D Stereo| CB[Google Cardboard / Mobile Viewer]
+        WebUI -->|WebCodecs H.265| S24[Samsung Galaxy S24\n120Hz AMOLED]
+        WebUI -->|ADB TCP/IP| Spark[Tecno Spark 20C\n90Hz LCD]
     end
 ```
 
