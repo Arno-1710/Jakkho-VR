@@ -226,20 +226,34 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 		return `${m}:${s}`;
 	};
 
+	const [streamImgError, setStreamImgError] = useState<boolean>(false);
+	const [streamKey, setStreamKey] = useState<number>(0);
+
+	// Periodic auto-retry when stream is in error state
+	useEffect(() => {
+		if (streamImgError && streamUrl) {
+			const timer = setInterval(() => {
+				setStreamKey((k) => k + 1);
+				setStreamImgError(false);
+			}, 3000);
+			return () => clearInterval(timer);
+		}
+	}, [streamImgError, streamUrl]);
+
 	return (
 		<>
 			{/* Popup Modal / Fullscreen Stereo VR Dialog */}
 			{showPopup && (
 				<div
-					className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-2 md:p-4"
+					className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-xl p-2 md:p-4 w-screen h-screen"
 					onClick={() => setShowPopup(false)}
 				>
 					<div
-						className="relative bg-slate-900 border-2 border-cyan-500/50 rounded-2xl p-4 shadow-2xl flex flex-col items-center max-w-[98vw] max-h-[98vh] w-full"
+						className="relative bg-slate-900 border-2 border-cyan-500/50 rounded-2xl p-4 shadow-2xl flex flex-col w-[96vw] h-[92vh] max-w-[1920px] max-h-[96vh]"
 						onClick={(e) => e.stopPropagation()}
 					>
 						{/* Modal Top Bar */}
-						<div className="w-full flex items-center justify-between pb-3 mb-2 border-b border-slate-800">
+						<div className="w-full flex-shrink-0 flex items-center justify-between pb-3 mb-2 border-b border-slate-800">
 							<div className="flex items-center gap-2">
 								<span className="font-mono font-bold text-cyan-400 text-sm md:text-base">{getDeviceLabel(id)}</span>
 								<span className="text-xs text-slate-400 font-mono hidden sm:inline">({id})</span>
@@ -297,49 +311,93 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 							</div>
 						</div>
 
-						{/* Modal Video Container */}
-						<div className="w-full flex-1 flex items-center justify-center overflow-hidden rounded-xl bg-black relative">
+						{/* Modal Video Container (Guaranteed Full Height) */}
+						<div className="w-full flex-1 min-h-0 flex items-center justify-center overflow-hidden rounded-xl bg-slate-950 relative">
 							{isStereoMode ? (
-								<div className="w-full h-full grid grid-cols-2 gap-1 items-center justify-center bg-black relative">
+								<div className="w-full h-full grid grid-cols-2 gap-1 items-center justify-center bg-black relative min-h-0">
 									{/* Center Cardboard Divider Line */}
-									<div className="absolute top-0 bottom-0 left-1/2 w-[2px] bg-slate-800 z-10" />
+									<div className="absolute top-0 bottom-0 left-1/2 w-[2px] bg-cyan-500/40 z-10" />
 
 									{/* Left Eye */}
-									<div className="w-full h-full flex items-center justify-center overflow-hidden relative">
+									<div className="w-full h-full flex items-center justify-center overflow-hidden relative min-h-0 bg-slate-950">
 										<span className="absolute top-2 left-2 px-2 py-0.5 bg-black/70 rounded text-[9px] font-mono text-cyan-400 z-20">
 											LEFT EYE (IPD {ipdOffset}mm)
 										</span>
-										{streamUrl ? (
+										{streamUrl && !streamImgError ? (
 											<img
+												key={`modal-left-${streamKey}`}
 												src={streamUrl}
 												alt="Left Eye"
 												className="w-full h-full object-contain"
 												style={{ transform: `scale(${lensZoom})` }}
+												onError={() => setStreamImgError(true)}
 											/>
+										) : streamUrl && streamImgError ? (
+											<div className="flex flex-col items-center justify-center p-4 text-center">
+												<div className="w-12 h-12 rounded-full border border-dashed border-cyan-400/40 flex items-center justify-center text-cyan-400 font-mono text-xl mb-2 animate-spin">
+													+
+												</div>
+												<span className="font-mono text-xs text-cyan-300 font-bold">LEFT EYE RETICLE</span>
+												<span className="font-mono text-[10px] text-slate-500 mt-1">Standby for Unity stream</span>
+											</div>
 										) : (
 											<div ref={popupref} className="w-full h-full flex items-center justify-center" />
 										)}
 									</div>
 
 									{/* Right Eye */}
-									<div className="w-full h-full flex items-center justify-center overflow-hidden relative">
+									<div className="w-full h-full flex items-center justify-center overflow-hidden relative min-h-0 bg-slate-950">
 										<span className="absolute top-2 left-2 px-2 py-0.5 bg-black/70 rounded text-[9px] font-mono text-purple-400 z-20">
 											RIGHT EYE (IPD {ipdOffset}mm)
 										</span>
-										{streamUrl ? (
+										{streamUrl && !streamImgError ? (
 											<img
+												key={`modal-right-${streamKey}`}
 												src={streamUrl}
 												alt="Right Eye"
 												className="w-full h-full object-contain"
 												style={{ transform: `scale(${lensZoom})` }}
+												onError={() => setStreamImgError(true)}
 											/>
+										) : streamUrl && streamImgError ? (
+											<div className="flex flex-col items-center justify-center p-4 text-center">
+												<div className="w-12 h-12 rounded-full border border-dashed border-purple-400/40 flex items-center justify-center text-purple-400 font-mono text-xl mb-2 animate-spin">
+													+
+												</div>
+												<span className="font-mono text-xs text-purple-300 font-bold">RIGHT EYE RETICLE</span>
+												<span className="font-mono text-[10px] text-slate-500 mt-1">Standby for Unity stream</span>
+											</div>
 										) : (
 											<canvas ref={stereoRightCanvasRef} className="w-full h-full object-contain rounded-xl" />
 										)}
 									</div>
 								</div>
+							) : streamUrl && !streamImgError ? (
+								<img
+									key={`modal-mono-${streamKey}`}
+									src={streamUrl}
+									alt="JAKKHO Live Stream"
+									className="w-full h-full object-contain"
+									onError={() => setStreamImgError(true)}
+								/>
+							) : streamUrl && streamImgError ? (
+								<div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
+									<div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mb-3 animate-pulse">
+										<span className="text-3xl font-mono text-cyan-400">◆</span>
+									</div>
+									<h3 className="font-mono font-bold text-base text-cyan-300 uppercase mb-1">
+										Unity VR Stream Standby
+									</h3>
+									<p className="text-xs text-slate-400 max-w-md font-mono mb-4">
+										Waiting for Unity Play Mode. Attach <code className="text-cyan-300">UnityLiveWebStreamer</code> to your Camera and press Play ▶️ in Unity.
+									</p>
+									<div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-700 text-xs font-mono text-slate-300">
+										<span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+										<span>Listening on http://localhost:8085/live.mjpg</span>
+									</div>
+								</div>
 							) : (
-								<div ref={popupref} className="flex items-center justify-center overflow-hidden rounded-xl bg-black max-h-[85vh] w-full" />
+								<div ref={popupref} className="flex items-center justify-center overflow-hidden rounded-xl bg-black w-full h-full" />
 							)}
 						</div>
 					</div>
@@ -366,22 +424,49 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 							{isStereoMode ? (
 								<div className="w-full h-full grid grid-cols-2 gap-0.5 bg-black rounded-xl overflow-hidden relative">
 									<div className="absolute top-0 bottom-0 left-1/2 w-[1px] bg-slate-800 z-10" />
-									<div className="w-full h-full border-r border-slate-800 overflow-hidden flex items-center justify-center">
-										{streamUrl ? <img src={streamUrl} alt="Left Eye" className="w-full h-full object-contain" /> : <div ref={canvasref} className="w-full h-full" />}
+									<div className="w-full h-full border-r border-slate-800 overflow-hidden flex items-center justify-center bg-slate-950">
+										{streamUrl && !streamImgError ? (
+											<img key={`card-left-${streamKey}`} src={streamUrl} alt="Left Eye" className="w-full h-full object-contain" onError={() => setStreamImgError(true)} />
+										) : streamUrl && streamImgError ? (
+											<div className="text-center font-mono text-[10px] text-cyan-400">LEFT EYE [STANDBY]</div>
+										) : (
+											<div ref={canvasref} className="w-full h-full" />
+										)}
 									</div>
-									<div className="w-full h-full overflow-hidden flex items-center justify-center">
-										{streamUrl ? <img src={streamUrl} alt="Right Eye" className="w-full h-full object-contain" /> : <canvas ref={stereoRightCanvasRef} className="w-full h-full object-contain" />}
+									<div className="w-full h-full overflow-hidden flex items-center justify-center bg-slate-950">
+										{streamUrl && !streamImgError ? (
+											<img key={`card-right-${streamKey}`} src={streamUrl} alt="Right Eye" className="w-full h-full object-contain" onError={() => setStreamImgError(true)} />
+										) : streamUrl && streamImgError ? (
+											<div className="text-center font-mono text-[10px] text-purple-400">RIGHT EYE [STANDBY]</div>
+										) : (
+											<canvas ref={stereoRightCanvasRef} className="w-full h-full object-contain" />
+										)}
 									</div>
 								</div>
-							) : streamUrl ? (
+							) : streamUrl && !streamImgError ? (
 								<img
+									key={`card-mono-${streamKey}`}
 									src={streamUrl}
 									alt="JAKKHO Live Stream"
 									className="w-full h-full object-contain rounded-xl bg-black"
-									onError={(e) => {
-										(e.target as HTMLElement).style.display = "none";
-									}}
+									onError={() => setStreamImgError(true)}
 								/>
+							) : streamUrl && streamImgError ? (
+								<div className="w-full h-full rounded-xl bg-slate-950 flex flex-col items-center justify-center p-6 text-center border border-slate-800 relative overflow-hidden">
+									<div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mb-2 animate-pulse">
+										<span className="text-2xl font-mono text-cyan-400">◆</span>
+									</div>
+									<h3 className="font-mono font-bold text-xs text-cyan-300 tracking-wide uppercase mb-1">
+										Unity Stream Standby
+									</h3>
+									<p className="text-[11px] text-slate-400 max-w-xs font-mono mb-2">
+										Press Play ▶️ in Unity to stream live camera
+									</p>
+									<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900 border border-slate-700 text-[10px] font-mono text-slate-300">
+										<span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+										<span>http://localhost:8085/live.mjpg</span>
+									</div>
+								</div>
 							) : (
 								<div
 									ref={canvasref}
