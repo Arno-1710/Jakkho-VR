@@ -294,13 +294,17 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 	const [streamKey, setStreamKey] = useState<number>(0);
 	const [isStreamLive, setIsStreamLive] = useState<boolean>(false);
 
+	const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+	const customHost = urlParams?.get("host");
+	const defaultHost = customHost || (typeof window !== "undefined" ? window.location.hostname || "localhost" : "localhost");
+	const activeStreamUrl = streamUrl ? streamUrl.replace("localhost", defaultHost) : `http://${defaultHost}:8085/live.mjpg`;
+
 	// High-speed Active Probe Loop: Instant Auto-Connect without refreshing
 	useEffect(() => {
 		if (!streamUrl) return;
 
 		let isMounted = true;
-		const probeHost = typeof window !== "undefined" ? window.location.hostname || "localhost" : "localhost";
-		const probeUrl = `http://${probeHost}:8085/snapshot.jpg`;
+		const probeUrl = `http://${defaultHost}:8085/snapshot.jpg`;
 
 		const probe = async () => {
 			let live = false;
@@ -342,7 +346,7 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 			isMounted = false;
 			clearInterval(interval);
 		};
-	}, [streamUrl, isStreamLive, streamImgError]);
+	}, [streamUrl, isStreamLive, streamImgError, defaultHost]);
 
 	return (
 		<>
@@ -427,16 +431,16 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 										<span className="absolute top-2 left-2 px-2 py-0.5 bg-black/70 rounded text-[9px] font-mono text-cyan-400 z-20">
 											LEFT EYE (IPD {ipdOffset}mm)
 										</span>
-										{streamUrl && !streamImgError ? (
+										{activeStreamUrl && !streamImgError ? (
 											<img
 												key={`modal-left-${streamKey}`}
-												src={streamUrl}
+												src={activeStreamUrl}
 												alt="Left Eye"
 												className="w-full h-full object-contain"
 												style={{ transform: `scale(${lensZoom})` }}
 												onError={() => setStreamImgError(true)}
 											/>
-										) : streamUrl && streamImgError ? (
+										) : activeStreamUrl && streamImgError ? (
 											<div className="flex flex-col items-center justify-center p-4 text-center">
 												<div className="w-12 h-12 rounded-full border border-dashed border-cyan-400/40 flex items-center justify-center text-cyan-400 font-mono text-xl mb-2 animate-spin">
 													+
@@ -538,25 +542,25 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 										)}
 									</div>
 									<div className="w-full h-full overflow-hidden flex items-center justify-center bg-slate-950">
-										{streamUrl && !streamImgError ? (
-											<img key={`card-right-${streamKey}`} src={streamUrl} crossOrigin="anonymous" alt="Right Eye" className="w-full h-full object-contain aspect-video" onError={() => setStreamImgError(true)} />
-										) : streamUrl && streamImgError ? (
+										{activeStreamUrl && !streamImgError ? (
+											<img key={`card-right-${streamKey}`} src={activeStreamUrl} crossOrigin="anonymous" alt="Right Eye" className="w-full h-full object-contain aspect-video" onError={() => setStreamImgError(true)} />
+										) : activeStreamUrl && streamImgError ? (
 											<div className="text-center font-mono text-[10px] text-purple-400">RIGHT EYE [STANDBY]</div>
 										) : (
 											<canvas ref={stereoRightCanvasRef} className="w-full h-full object-contain aspect-video" />
 										)}
 									</div>
 								</div>
-							) : streamUrl && !streamImgError ? (
+							) : activeStreamUrl && !streamImgError ? (
 								<img
 									key={`card-mono-${streamKey}`}
-									src={streamUrl}
+									src={activeStreamUrl}
 									crossOrigin="anonymous"
 									alt="JAKKHO Live Stream"
 									className="w-full h-full object-contain rounded-xl bg-black aspect-video"
 									onError={() => setStreamImgError(true)}
 								/>
-							) : streamUrl && streamImgError ? (
+							) : activeStreamUrl && streamImgError ? (
 								<div className="w-full h-full rounded-xl bg-slate-950 flex flex-col items-center justify-center p-6 text-center border border-slate-800 relative overflow-hidden aspect-video">
 									<div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mb-2 animate-pulse">
 										<span className="text-2xl font-mono text-cyan-400">◆</span>
@@ -569,7 +573,7 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 									</p>
 									<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900 border border-slate-700 text-[10px] font-mono text-slate-300">
 										<span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-										<span>http://localhost:8085/live.mjpg</span>
+										<span>{activeStreamUrl}</span>
 									</div>
 								</div>
 							) : (
