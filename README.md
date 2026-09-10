@@ -114,16 +114,82 @@ Anyone can clone and run this on their computer with zero manual configuration:
 
 ---
 
-### 2. Stream from Unity to the Website (Wireless Live Casting)
-You can use the streamer in the included test scene or **drop it into any of your own Unity projects**:
+## 🌐 Live Casting Website Guide
 
-1. In Unity, copy [`UnityLiveWebStreamer.cs`](./unity_scripts/Scripts/UnityLiveWebStreamer.cs) into your project's `Assets/` folder.
-2. Select your **`Main Camera`** (or `XR_Player`).
-3. Click **Add Component** ➔ select **`Unity Live Web Streamer`**.
-4. Press **Play ▶️** in Unity.
-5. Open **`http://localhost:5173/`** — the Unity scene will immediately render live in the **JAKKHO White Bezel Frame**!
+The **JAKKHO VR Webcasting Platform** is a 16:9 widescreen, 1080p 60 FPS live broadcast station built to view Unity PC VR games and Meta Quest wireless headsets in real time.
 
-> **Direct URL**: Any device on the same Wi-Fi network (phones, tablets, laptops) can also view the stream directly by opening `http://<YOUR_PC_IP>:8085/live.mjpg`.
+### 🔗 Direct URL Access Points:
+| Target Device / Client | URL | Description |
+| :--- | :--- | :--- |
+| **Local PC Browser** | `http://localhost:5173/cast` | Fullscreen live casting viewport |
+| **Mission Control Home** | `http://localhost:5173/` | Interactive dashboard with telemetry & controls |
+| **Meta Quest / Mobile (Wi-Fi)** | `http://<YOUR_LAN_IP>:5173/cast` | In-headset browser or phone viewer |
+| **Multi-View Grid** | `http://<YOUR_LAN_IP>:5173/streamPlayerScreen` | Simultaneous Unity + Headsets multi-stream |
+| **Direct MJPEG (VLC / OBS / TV)** | `http://<YOUR_LAN_IP>:8085/stream.mjpg` | Raw video stream without Node.js |
+
+---
+
+### 🎮 How to Stream from Unity (Universal Compatibility)
+
+The included [`UnityLiveWebStreamer.cs`](./unity_scripts/Scripts/UnityLiveWebStreamer.cs) script works across **any Unity version** (Unity 2019, 2020, 2021, 2022, Unity 6+) and **any render pipeline** (Built-in Standard, URP, or HDRP).
+
+#### 1. Drop into your Unity Project:
+* Copy [`UnityLiveWebStreamer.cs`](./unity_scripts/Scripts/UnityLiveWebStreamer.cs) into your project's `Assets/Scripts/` folder.
+* **Auto-Attach**: If you do not attach it manually, it will **automatically attach itself to your Main Camera** the moment you press Play!
+
+#### 2. Unity Top Menu Shortcuts:
+* In the Unity Editor menu bar, click:
+  * **`JAKKHO VR` ➔ `Open Webcast in Browser (5173)`**: Opens the live casting page in your browser.
+  * **`JAKKHO VR` ➔ `Open Direct MJPEG Stream (8085)`**: Opens the direct video stream.
+
+#### 3. Inspector Settings:
+Select your Camera with `UnityLiveWebStreamer` attached to tune stream parameters:
+* **`Target FPS`** (Default `60`): Target framerate (15–60 FPS).
+* **`Stream Height`** (Default `1080`): Resolution height (1080p widescreen).
+* **`JPG Quality`** (Default `90`): Visual fidelity (20–95%).
+* **`Auto Open Browser On Play`** (Optional): Automatically launches Chrome/Edge to the cast whenever you press **Play ▶️**.
+* **`HTTP Port`** (Default `8085`): Local video broadcast port.
+
+---
+
+### 🎛️ Live Casting Features & Controls
+
+1. **🖥️ 16:9 Widescreen & Fullscreen Mode**:
+   * All viewports automatically scale to 16:9 cinematic aspect ratio.
+   * Press **`F`** on your keyboard or click the **Fullscreen (⛶)** button to enter borderless theater casting.
+2. **⚡ Zero-Refresh Instant Reconnect**:
+   * The web platform actively probes for stream signals every 800ms. The instant Unity enters Play mode, the stream attaches automatically without manual page refreshes.
+3. **📷 High-Resolution Snapshots**:
+   * Click **`📷 Snap`** in the control bar to capture a full-resolution JPEG frame and automatically download it to your PC with an on-screen toast confirmation.
+4. **🔲 Multi-View Grid Mode (`Active Source: Grid`)**:
+   * In the top control bar, select **`Grid`** to monitor the **Unity PC Camera** and **Meta Quest Headset feeds** simultaneously in a side-by-side or 2×2 layout.
+5. **🥽 3D Stereo Cardboard VR Mode**:
+   * Click the **`🥽 Stereo VR`** button to split the stream into Left and Right eye viewports with adjustable IPD (56–72mm) and zoom controls for mobile VR headsets.
+6. **⚙️ Gyro Calibration & Zero-Drift Tare**:
+   * Live deadzone adjustment, pitch/yaw inversion, sensitivity sliders, and a **`Zero Tare`** button to re-center spatial orientation.
+7. **📊 Live Telemetry HUD & JSON Exporter**:
+   * Real-time monitoring of FPS, network latency (ms), and bitrate (Mbps), with 1-click **Export Telemetry (JSON)** for experiment logging.
+
+---
+
+### 🥽 Meta Quest & Mobile Wireless Viewing Guide
+
+1. Make sure your Meta Quest (or phone/tablet) is connected to the **same Wi-Fi network** as your PC.
+2. In the Quest headset, open the built-in **Meta Quest Browser**.
+3. Type your PC's LAN IP address: `http://<YOUR_PC_IP>:5173/cast` (e.g. `http://192.168.1.50:5173/cast`).
+4. Click the **Fullscreen** button inside the browser to watch your Unity PC rendering live on a massive virtual cinema screen inside VR!
+
+---
+
+### ❓ Troubleshooting & FAQ
+
+* **"This site can't be reached / localhost refused to connect"**:
+  * Make sure the web server is running by double-clicking `start_webcasting.bat` or executing `.\start_webcasting.ps1` in PowerShell.
+* **"Standby • Waiting for Stream"**:
+  * Unity is not currently running the stream. Press **Play ▶️** in the Unity Editor to start streaming.
+* **Quest / Phone cannot connect to the PC's IP**:
+  * Check that both devices are on the same Wi-Fi router/hotspot.
+  * Ensure Windows Defender Firewall allows Node.js / Port `5173` and `8085` on Private networks.
 
 ---
 
