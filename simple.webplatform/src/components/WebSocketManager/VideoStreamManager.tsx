@@ -2,8 +2,8 @@ import { useVideoGrid } from "../../hooks/useVideoGrid";
 import { useVideoStreams } from "../../hooks/useVideoStreams";
 import PlayerScreenCanvas from "./PlayerScreenCanvas.tsx";
 
-// Quest streams land landscape after the server's inverted-ratio flip (~1570x1482); used to size grid cells.
-const STREAM_ASPECT_RATIO = 1570 / 1482;
+// Standard Widescreen 16:9 Aspect Ratio (1920x1080 / 16:9)
+const STREAM_ASPECT_RATIO = 16 / 9;
 
 interface VideoStreamManagerProps {
 	needsInteractivity?: boolean;
@@ -30,23 +30,23 @@ const VideoStreamManager = ({ needsInteractivity, selectedCanvas, hideInfos }: V
 			))}
 		</div>
 	) : (
-		<div className="w-full h-full flex flex-col items-center">
+		<div className="w-full h-full flex flex-col items-center justify-center p-2">
 			<div
 				ref={containerRef}
 				id="canvascontainer"
-				className="w-full h-full grid gap-2 place-items-center p-2"
+				className="w-full h-full grid gap-4 place-items-center p-2"
 				style={{
 					gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
 					gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
 				}}
 			>
 				{sortedKeys.map((key) => (
-					<div key={key} style={{ width: tileWidth, height: tileHeight }} className="flex items-center justify-center">
+					<div key={key} style={{ width: tileWidth, height: tileHeight }} className="flex items-center justify-center aspect-video w-full h-full">
 						<PlayerScreenCanvas id={key} canvas={canvasList[key]} needsInteractivity={true} hideInfos={hideInfos} />
 					</div>
 				))}
 				{streamCount === 0 && (
-					<div style={{ width: tileWidth, height: tileHeight }} className="flex items-center justify-center">
+					<div style={{ width: tileWidth, height: tileHeight }} className="flex items-center justify-center aspect-video w-full h-full">
 						<PlayerScreenCanvas
 							id="unity_pc"
 							streamUrl="http://localhost:8085/live.mjpg"

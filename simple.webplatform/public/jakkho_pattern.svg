@@ -1,0 +1,57 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='120' height='70' viewBox='0 0 120 70'>
+  <defs>
+    <style>
+      .stroke-main { stroke: rgba(82, 112, 148, 0.28); stroke-width: 3.5; stroke-linecap: square; stroke-linejoin: miter; fill: none; }
+      .stroke-inner { stroke: rgba(82, 112, 148, 0.28); stroke-width: 2.5; fill: none; }
+      .fill-diamond { fill: rgba(82, 112, 148, 0.28); }
+    </style>
+  </defs>
+  <!-- Unit tile 120 x 70 -->
+  <!-- Center Diamond at (60, 35) -->
+  <path d='M60 15 L82 35 L60 55 L38 35 Z' class='stroke-main' />
+  <path d='M60 23 L72 35 L60 47 L48 35 Z' class='stroke-inner' />
+  <path d='M60 31 L64 35 L60 39 L56 35 Z' class='fill-diamond' />
+
+  <!-- Left chevrons of center diamond -->
+  <path d='M30 20 L16 35 L30 50' class='stroke-main' />
+  <path d='M22 23 L11 35 L22 47' class='stroke-inner' />
+
+  <!-- Right chevrons of center diamond -->
+  <path d='M90 20 L104 35 L90 50' class='stroke-main' />
+  <path d='M98 23 L109 35 L98 47' class='stroke-inner' />
+
+  <!-- Horizontal connector bars -->
+  <rect x='0' y='33' width='8' height='4' class='fill-diamond' />
+  <rect x='112' y='33' width='8' height='4' class='fill-diamond' />
+
+  <!-- Corner Diamonds (staggered at 0,0 / 120,0 / 0,70 / 120,70) -->
+  <!-- Top-left at (0,0) -->
+  <path d='M0 -20 L22 0 L0 20 L-22 0 Z' class='stroke-main' />
+  <path d='M0 -12 L12 0 L0 12 L-12 0 Z' class='stroke-inner' />
+  <path d='M0 -4 L4 0 L0 4 L-4 0 Z' class='fill-diamond' />
+  <path d='M30 -15 L44 0 L30 15' class='stroke-main' />
+  <path d='M38 -12 L49 0 L38 12' class='stroke-inner' />
+  <rect x='52' y='-2' width='16' height='4' class='fill-diamond' />
+
+  <!-- Top-right at (120,0) -->
+  <path d='M120 -20 L142 0 L120 20 L98 0 Z' class='stroke-main' />
+  <path d='M120 -12 L132 0 L120 12 L108 0 Z' class='stroke-inner' />
+  <path d='M120 -4 L124 0 L120 4 L116 0 Z' class='fill-diamond' />
+  <path d='M90 -15 L76 0 L90 15' class='stroke-main' />
+  <path d='M82 -12 L71 0 L82 12' class='stroke-inner' />
+
+  <!-- Bottom-left at (0,70) -->
+  <path d='M0 50 L22 70 L0 90 L-22 70 Z' class='stroke-main' />
+  <path d='M0 58 L12 70 L0 82 L-12 70 Z' class='stroke-inner' />
+  <path d='M0 66 L4 70 L0 74 L-4 70 Z' class='fill-diamond' />
+  <path d='M30 55 L44 70 L30 85' class='stroke-main' />
+  <path d='M38 58 L49 70 L38 82' class='stroke-inner' />
+  <rect x='52' y='68' width='16' height='4' class='fill-diamond' />
+
+  <!-- Bottom-right at (120,70) -->
+  <path d='M120 50 L142 70 L120 90 L98 70 Z' class='stroke-main' />
+  <path d='M120 58 L132 70 L120 82 L108 70 Z' class='stroke-inner' />
+  <path d='M120 66 L124 70 L120 74 L116 70 Z' class='fill-diamond' />
+  <path d='M90 55 L76 70 L90 85' class='stroke-main' />
+  <path d='M82 58 L71 70 L82 82' class='stroke-inner' />
+</svg>

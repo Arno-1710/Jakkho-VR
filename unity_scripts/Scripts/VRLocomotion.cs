@@ -1,9 +1,13 @@
-using UnityEngine;
+﻿using UnityEngine;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 namespace DIYVR
 {
     /// <summary>
-    /// Handles VR Player Locomotion using the DIY Controller's Analog Joystick.
+    /// Handles VR Player Locomotion using the DIY Controller's Analog Joystick
+    /// or PC Keyboard (WASD / Arrows) when testing on PC.
     /// Supports Smooth Movement, Snap Turning, and Smooth Turning.
     /// </summary>
     public class VRLocomotion : MonoBehaviour
@@ -18,7 +22,7 @@ namespace DIYVR
         public TurnType turnType = TurnType.SnapTurn;
 
         [Header("Movement Settings")]
-        public float moveSpeed = 3.0f;
+        public float moveSpeed = 3.5f;
         public Transform forwardReference; // Head Camera or Hand Controller
 
         [Header("Turn Settings")]
@@ -42,16 +46,48 @@ namespace DIYVR
 
         private void Update()
         {
-            if (BLEControllerReceiver.Instance == null) return;
-            ControllerState state = BLEControllerReceiver.Instance.CurrentState;
+            if (forwardReference == null && Camera.main != null)
+                forwardReference = Camera.main.transform;
 
-            HandleMovement(state.Joystick);
-            HandleTurning(state.Joystick.x);
+            Vector2 joy = Vector2.zero;
+
+            // 1. Read from BLE / UDP Controller if connected
+            if (BLEControllerReceiver.Instance != null)
+            {
+                joy = BLEControllerReceiver.Instance.CurrentState.Joystick;
+            }
+
+            // 2. Direct Keyboard Input Fallback
+            if (joy == Vector2.zero)
+            {
+                #if ENABLE_INPUT_SYSTEM
+                var kb = Keyboard.current;
+                if (kb != null)
+                {
+                    if (kb.wKey.isPressed || kb.upArrowKey.isPressed) joy.y += 1f;
+                    if (kb.sKey.isPressed || kb.downArrowKey.isPressed) joy.y -= 1f;
+                    if (kb.dKey.isPressed || kb.rightArrowKey.isPressed) joy.x += 1f;
+                    if (kb.aKey.isPressed || kb.leftArrowKey.isPressed) joy.x -= 1f;
+                }
+                #endif
+
+                #if ENABLE_LEGACY_INPUT_MANAGER
+                try
+                {
+                    joy.x = Input.GetAxisRaw("Horizontal");
+                    joy.y = Input.GetAxisRaw("Vertical");
+                }
+                catch { }
+                #endif
+            }
+
+            HandleMovement(joy);
+            HandleTurning(joy.x);
         }
 
         private void HandleMovement(Vector2 joy)
         {
-            if (forwardReference == null) return;
+            if (forwardReference == null || joy == Vector2.zero) return;
 
             // Get forward and right relative to the reference transform (flattened on Y)
             Vector3 forward = forwardReference.forward;
@@ -66,7 +102,6 @@ namespace DIYVR
 
             if (characterController != null && characterController.enabled)
             {
-                // Apply simple gravity
                 moveDirection.y = Physics.gravity.y * Time.deltaTime;
                 characterController.Move(moveDirection * moveSpeed * Time.deltaTime);
             }

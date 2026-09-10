@@ -32,7 +32,10 @@ const App = () => {
 						<Route index element={<SelectorSimulations />} />
 						<Route path="simulationManager" element={<SimulationManager />} />
 						<Route path="streamPlayerScreen" element={<StreamPlayerScreen />} />
-						<Route path="streamFullscreen" element={<StreamFullscreen />}></Route>
+						<Route path="streamFullscreen" element={<StreamFullscreen />} />
+						<Route path="cast" element={<StreamPlayerScreen />} />
+						<Route path="live" element={<StreamPlayerScreen />} />
+						<Route path="stream" element={<StreamPlayerScreen />} />
 					</Routes>
 				</WebSocketManager>
 			</div>

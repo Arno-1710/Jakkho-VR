@@ -28,7 +28,7 @@ namespace DIYVR
 
         [Header("Editor Simulation")]
         [Tooltip("Enables mouse and keyboard simulation only if physical hardware is detached.")]
-        public bool enableEditorSimulation = false;
+        public bool enableEditorSimulation = true;
 
         [Header("Debug Status")]
         public bool isConnected = false;

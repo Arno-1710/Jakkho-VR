@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useSimulationNav } from "../../hooks/useSimulationNav";
+import { useVideoStreams } from "../../hooks/useVideoStreams";
 import Footer from "../Footer/Footer";
 import Header from "../Header/Header";
 import PlayerScreenCanvas from "../WebSocketManager/PlayerScreenCanvas";
 
 const SelectorSimulations = () => {
 	const { reset } = useSimulationNav();
+	const { canvasList, sortedKeys } = useVideoStreams();
 
-	// Active Stream Mode
-	const [selectedStreamSource, setSelectedStreamSource] = useState<"unity" | "s24" | "tecno" | "standby">("unity");
+	// Active Stream Mode: "unity", "auto", or specific device key from sortedKeys
+	const [selectedStreamSource, setSelectedStreamSource] = useState<string>("unity");
 	const [isUnityActive, setIsUnityActive] = useState<boolean>(true);
 
 	// Interactive Hand Controller Simulation state
@@ -34,27 +36,39 @@ const SelectorSimulations = () => {
 	const [gyroRoll, setGyroRoll] = useState<number>(0);
 
 	// Part 2: Mobile VR Lens Preset Profile
-	const [selectedProfile, setSelectedProfile] = useState<"cardboard" | "s24_gear" | "tecno_vrbox">("s24_gear");
+	const [selectedProfile, setSelectedProfile] = useState<"wide_fov" | "medium_fov" | "cardboard">("wide_fov");
 
 	// Part 2: Live Network & Telemetry HUD State
 	const [fpsCounter, setFpsCounter] = useState<number>(60);
 	const [latencyMs, setLatencyMs] = useState<number>(12);
 	const [bitrateMbps, setBitrateMbps] = useState<number>(4.6);
 
-	// Periodic ping and simulation updates
+	// Fast active probe for instant Unity stream connection
 	useEffect(() => {
+		let isMounted = true;
 		const checkUnityStream = async () => {
+			const host = typeof window !== "undefined" ? window.location.hostname || "localhost" : "localhost";
 			try {
-				await fetch("http://localhost:8085/snapshot.jpg", { method: "HEAD", mode: "no-cors" });
-				setIsUnityActive(true);
+				const controller = new AbortController();
+				const timeoutId = setTimeout(() => controller.abort(), 1000);
+				await fetch(`http://${host}:8085/snapshot.jpg?t=${Date.now()}`, {
+					method: "HEAD",
+					mode: "no-cors",
+					signal: controller.signal,
+				});
+				clearTimeout(timeoutId);
+				if (isMounted) setIsUnityActive(true);
 			} catch {
-				setIsUnityActive(false);
+				if (isMounted) setIsUnityActive(false);
 			}
 		};
 		checkUnityStream();
-		const interval = setInterval(checkUnityStream, 4000);
-		return () => clearInterval(interval);
-	}, []);
+		const interval = setInterval(checkUnityStream, isUnityActive ? 2500 : 900);
+		return () => {
+			isMounted = false;
+			clearInterval(interval);
+		};
+	}, [isUnityActive]);
 
 	// Live telemetry fluctuation simulation for realistic HUD
 	useEffect(() => {
@@ -93,7 +107,7 @@ const SelectorSimulations = () => {
 	// Export Telemetry Diagnostic Session to JSON
 	const handleExportTelemetrySession = () => {
 		const report = {
-			ecosystem: "JAKKHO OpenXR & Dual-Phone Streaming Web Platform",
+			ecosystem: "JAKKHO OpenXR & Multi-Device VR Streaming Web Platform",
 			timestamp: new Date().toISOString(),
 			activeStreamSource: selectedStreamSource,
 			streamStatus: {
@@ -144,7 +158,7 @@ const SelectorSimulations = () => {
 
 			<div className="w-full max-w-6xl px-4 md:px-8 py-6 flex flex-col items-center gap-8">
 				{/* Welcome Hero Banner */}
-				<div className="w-full rounded-2xl bg-slate-900/85 border border-cyan-500/30 p-6 md:p-8 backdrop-blur-xl shadow-2xl relative overflow-hidden">
+				<div className="w-full rounded-2xl bg-[#121826]/90 border border-[#1e2e4a] p-6 md:p-8 backdrop-blur-xl shadow-2xl relative overflow-hidden">
 					<div className="absolute -top-24 -right-24 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
 					<div className="flex flex-col lg:flex-row items-center justify-between gap-6 relative z-10">
 						<div>
@@ -153,30 +167,21 @@ const SelectorSimulations = () => {
 								JAKKHO VR MISSION CONTROL &bull; PART 2 STUDIO
 							</div>
 							<h1 className="text-2xl md:text-3xl font-extrabold text-white font-mono tracking-tight">
-								Wireless OpenXR, Dual-Phone & Calibration Hub
+								Wireless OpenXR & Multi-Device Streaming Hub
 							</h1>
 							<p className="text-sm text-slate-300 max-w-xl mt-2 font-mono leading-relaxed">
-								Zero-wire live casting from Unity PC test scene, direct 3D Cardboard stereo VR, 1-click video recording, and 80Hz ESP32 sensor fusion calibration.
+								Zero-wire live casting from Unity PC test scene, auto-detected VR headset rendering, and 80Hz ESP32 DIY VR hand controller telemetry.
 							</p>
 						</div>
 
 						<div className="flex flex-wrap gap-3 w-full lg:w-auto">
 							<Link
 								to="/streamPlayerScreen"
-								className="px-5 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-mono font-bold text-xs md:text-sm flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/25 transition-all text-decoration-none"
+								className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-mono font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/25 transition-all text-decoration-none"
 							>
 								<span>🖥️</span>
 								<span>Fullscreen Casting</span>
 							</Link>
-							<button
-								type="button"
-								onClick={handleExportTelemetrySession}
-								className="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-mono font-semibold text-xs md:text-sm flex items-center justify-center gap-2 border border-slate-700 transition-all shadow-md"
-								title="Download JSON Telemetry Diagnostics"
-							>
-								<span>📊</span>
-								<span>Export Telemetry</span>
-							</button>
 						</div>
 					</div>
 				</div>
@@ -200,75 +205,94 @@ const SelectorSimulations = () => {
 								)}
 							</div>
 
-							{/* Stream Switcher Tabs */}
-							<div className="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs font-mono">
+							{/* Dynamic Stream Switcher Tabs */}
+							<div className="flex items-center gap-1.5 bg-[#0b1f3a]/90 p-1 rounded-xl border border-[#1e2e4a] text-xs font-mono">
 								<button
 									type="button"
 									onClick={() => setSelectedStreamSource("unity")}
-									className={`px-2.5 py-1 rounded-lg transition-all ${
+									className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 ${
 										selectedStreamSource === "unity"
-											? "bg-cyan-500 text-slate-950 font-bold"
+											? "bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/20"
 											: "text-slate-400 hover:text-white"
 									}`}
 								>
-									🖥️ Unity PC
+									<span className={`w-1.5 h-1.5 rounded-full ${isUnityActive ? "bg-emerald-400" : "bg-amber-400"}`} />
+									<span>🖥️ Unity Stream</span>
 								</button>
-								<button
-									type="button"
-									onClick={() => setSelectedStreamSource("s24")}
-									className={`px-2.5 py-1 rounded-lg transition-all ${
-										selectedStreamSource === "s24"
-											? "bg-cyan-500 text-slate-950 font-bold"
-											: "text-slate-400 hover:text-white"
-									}`}
-								>
-									📱 S24
-								</button>
-								<button
-									type="button"
-									onClick={() => setSelectedStreamSource("tecno")}
-									className={`px-2.5 py-1 rounded-lg transition-all ${
-										selectedStreamSource === "tecno"
-											? "bg-cyan-500 text-slate-950 font-bold"
-											: "text-slate-400 hover:text-white"
-									}`}
-								>
-									📱 Spark 20C
-								</button>
+
+								{/* Dynamically detected device tabs */}
+								{sortedKeys.map((key, idx) => (
+									<button
+										key={key}
+										type="button"
+										onClick={() => setSelectedStreamSource(key)}
+										className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 ${
+											selectedStreamSource === key
+												? "bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/20"
+												: "text-slate-400 hover:text-white"
+										}`}
+									>
+										<span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+										<span>📱 Headset {idx + 1}</span>
+									</button>
+								))}
+
+								{sortedKeys.length === 0 && (
+									<button
+										type="button"
+										onClick={() => setSelectedStreamSource("auto")}
+										className={`px-2.5 py-1 rounded-lg transition-all ${
+											selectedStreamSource === "auto"
+												? "bg-cyan-500 text-slate-950 font-bold"
+												: "text-slate-400 hover:text-white"
+										}`}
+									>
+										📡 Auto-Detect
+									</button>
+								)}
 							</div>
 						</div>
 
 						{/* White Rounded Bezel Frame Container */}
-						<div className="w-full h-[360px] md:h-[420px] relative">
-							{selectedStreamSource === "unity" ? (
-								<PlayerScreenCanvas
-									id="unity_pc"
-									streamUrl="http://localhost:8085/live.mjpg"
-									needsInteractivity={true}
-								/>
-							) : selectedStreamSource === "s24" ? (
-								<PlayerScreenCanvas id="samsung_s24" isPlaceholder needsInteractivity />
-							) : selectedStreamSource === "tecno" ? (
-								<PlayerScreenCanvas id="tecno_spark20c" isPlaceholder needsInteractivity />
-							) : (
-								<PlayerScreenCanvas id="standby" isPlaceholder needsInteractivity />
-							)}
+						<div className="w-full aspect-video max-h-[460px] relative flex items-center justify-center">
+							{(() => {
+								const streamUrl = typeof window !== "undefined" ? `http://${window.location.hostname || "localhost"}:8085/live.mjpg` : "http://localhost:8085/live.mjpg";
+								return selectedStreamSource === "unity" ? (
+									<PlayerScreenCanvas
+										id="unity_pc"
+										streamUrl={streamUrl}
+										needsInteractivity={true}
+									/>
+								) : canvasList[selectedStreamSource] ? (
+									<PlayerScreenCanvas
+										id={selectedStreamSource}
+										canvas={canvasList[selectedStreamSource]}
+										needsInteractivity={true}
+									/>
+								) : (
+									<PlayerScreenCanvas
+										id="unity_pc"
+										streamUrl={streamUrl}
+										needsInteractivity={true}
+									/>
+								);
+							})()}
 						</div>
 
 						{/* Real-time Stream Telemetry Matrix HUD */}
 						<div className="grid grid-cols-3 gap-2 px-1">
-							<div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between font-mono text-xs">
+							<div className="p-2.5 rounded-xl bg-[#121826]/85 border border-[#1e2e4a] flex items-center justify-between font-mono text-xs">
 								<span className="text-slate-400">Frame Rate:</span>
 								<span className="text-cyan-400 font-bold flex items-center gap-1">
 									<span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
 									{fpsCounter} FPS
 								</span>
 							</div>
-							<div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between font-mono text-xs">
+							<div className="p-2.5 rounded-xl bg-[#121826]/85 border border-[#1e2e4a] flex items-center justify-between font-mono text-xs">
 								<span className="text-slate-400">Latency:</span>
 								<span className="text-emerald-400 font-bold">~{latencyMs} ms</span>
 							</div>
-							<div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between font-mono text-xs">
+							<div className="p-2.5 rounded-xl bg-[#121826]/85 border border-[#1e2e4a] flex items-center justify-between font-mono text-xs">
 								<span className="text-slate-400">Bitrate:</span>
 								<span className="text-purple-400 font-bold">{bitrateMbps} Mbps</span>
 							</div>
@@ -287,9 +311,9 @@ const SelectorSimulations = () => {
 							</span>
 						</div>
 
-						<div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-5 backdrop-blur-md flex flex-col gap-4 shadow-xl">
+						<div className="rounded-2xl bg-[#121826]/90 border border-[#1e2e4a] p-5 backdrop-blur-md flex flex-col gap-4 shadow-xl">
 							{/* Connection & Bridge Status */}
-							<div className="flex items-center justify-between pb-3 border-b border-slate-800 text-xs font-mono">
+							<div className="flex items-center justify-between pb-3 border-b border-[#1e2e4a] text-xs font-mono">
 								<div className="flex items-center gap-2">
 									<span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
 									<span className="text-slate-300 font-semibold">Telemetry Bridge:</span>
@@ -305,10 +329,10 @@ const SelectorSimulations = () => {
 										Raw: ({joyX.toFixed(2)}, {joyY.toFixed(2)}) &bull; Eff: ({effX}, {effY})
 									</span>
 								</div>
-								<div className="w-full h-32 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center relative overflow-hidden">
+								<div className="w-full h-32 rounded-xl bg-[#081324] border border-[#1e2e4a] flex items-center justify-center relative overflow-hidden">
 									{/* Crosshair axes */}
-									<div className="absolute w-full h-[1px] bg-slate-800" />
-									<div className="absolute h-full w-[1px] bg-slate-800" />
+									<div className="absolute w-full h-[1px] bg-[#1e2e4a]" />
+									<div className="absolute h-full w-[1px] bg-[#1e2e4a]" />
 									
 									{/* Outer boundary */}
 									<div className="w-24 h-24 rounded-full border border-dashed border-cyan-500/20 absolute" />
@@ -339,7 +363,7 @@ const SelectorSimulations = () => {
 										type="button"
 										onMouseDown={() => setJoyY(1)}
 										onMouseUp={() => setJoyY(0)}
-										className="py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-mono text-[10px]"
+										className="py-1 bg-[#0b1f3a] hover:bg-[#152945] text-slate-300 rounded font-mono text-[10px] border border-[#1e2e4a]"
 									>
 										▲ Up
 									</button>
@@ -347,7 +371,7 @@ const SelectorSimulations = () => {
 										type="button"
 										onMouseDown={() => setJoyY(-1)}
 										onMouseUp={() => setJoyY(0)}
-										className="py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-mono text-[10px]"
+										className="py-1 bg-[#0b1f3a] hover:bg-[#152945] text-slate-300 rounded font-mono text-[10px] border border-[#1e2e4a]"
 									>
 										▼ Down
 									</button>
@@ -355,7 +379,7 @@ const SelectorSimulations = () => {
 										type="button"
 										onMouseDown={() => setJoyX(-1)}
 										onMouseUp={() => setJoyX(0)}
-										className="py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-mono text-[10px]"
+										className="py-1 bg-[#0b1f3a] hover:bg-[#152945] text-slate-300 rounded font-mono text-[10px] border border-[#1e2e4a]"
 									>
 										◀ Left
 									</button>
@@ -363,7 +387,7 @@ const SelectorSimulations = () => {
 										type="button"
 										onMouseDown={() => setJoyX(1)}
 										onMouseUp={() => setJoyX(0)}
-										className="py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-mono text-[10px]"
+										className="py-1 bg-[#0b1f3a] hover:bg-[#152945] text-slate-300 rounded font-mono text-[10px] border border-[#1e2e4a]"
 									>
 										▶ Right
 									</button>
@@ -371,7 +395,7 @@ const SelectorSimulations = () => {
 							</div>
 
 							{/* Physical Buttons Indicators */}
-							<div className="flex flex-col gap-2 pt-2 border-t border-slate-800">
+							<div className="flex flex-col gap-2 pt-2 border-t border-[#1e2e4a]">
 								<span className="text-xs font-mono text-slate-400">Tactile Action Buttons</span>
 								<div className="grid grid-cols-3 gap-2 font-mono text-xs">
 									<button
@@ -381,7 +405,7 @@ const SelectorSimulations = () => {
 										className={`p-2 rounded-xl border flex flex-col items-center gap-1 transition-all ${
 											triggerPressed
 												? "bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-md shadow-cyan-500/20"
-												: "bg-slate-950 border-slate-800 text-slate-400"
+												: "bg-[#0b1f3a]/80 border-[#1e2e4a] text-slate-400"
 										}`}
 									>
 										<span className="text-sm">🎯</span>
@@ -396,7 +420,7 @@ const SelectorSimulations = () => {
 										className={`p-2 rounded-xl border flex flex-col items-center gap-1 transition-all ${
 											gripPressed
 												? "bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-md shadow-cyan-500/20"
-												: "bg-slate-950 border-slate-800 text-slate-400"
+												: "bg-[#0b1f3a]/80 border-[#1e2e4a] text-slate-400"
 										}`}
 									>
 										<span className="text-sm">✊</span>
@@ -411,7 +435,7 @@ const SelectorSimulations = () => {
 										className={`p-2 rounded-xl border flex flex-col items-center gap-1 transition-all ${
 											recenterPressed
 												? "bg-amber-500/20 border-amber-400 text-amber-300 shadow-md shadow-amber-500/20"
-												: "bg-slate-950 border-slate-800 text-slate-400"
+												: "bg-[#0b1f3a]/80 border-[#1e2e4a] text-slate-400"
 										}`}
 									>
 										<span className="text-sm">🔄</span>
@@ -425,8 +449,8 @@ const SelectorSimulations = () => {
 				</div>
 
 				{/* Part 2: Interactive Calibration & Sensor Tuning Wizard */}
-				<div className="w-full rounded-2xl bg-slate-900/80 border border-cyan-500/25 p-6 backdrop-blur-xl shadow-2xl">
-					<div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 mb-4 border-b border-slate-800">
+				<div className="w-full rounded-2xl bg-[#121826]/90 border border-[#1e2e4a] p-6 backdrop-blur-xl shadow-2xl">
+					<div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 mb-4 border-b border-[#1e2e4a]">
 						<div>
 							<div className="inline-flex items-center gap-2 text-cyan-400 font-mono text-xs font-bold uppercase mb-1">
 								<span>⚙️</span>
@@ -453,7 +477,7 @@ const SelectorSimulations = () => {
 
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-mono text-xs">
 						{/* Col 1: Joystick Deadzone & Sensitivity Sliders */}
-						<div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-col gap-3">
+						<div className="p-4 rounded-xl bg-[#0b1f3a]/80 border border-[#1e2e4a] flex flex-col gap-3">
 							<div className="flex items-center justify-between text-slate-200 font-bold">
 								<span>🕹️ Joystick Calibration</span>
 							</div>
@@ -490,7 +514,7 @@ const SelectorSimulations = () => {
 								/>
 							</div>
 
-							<div className="flex items-center justify-between pt-2 border-t border-slate-800 text-slate-400">
+							<div className="flex items-center justify-between pt-2 border-t border-[#1e2e4a] text-slate-400">
 								<label className="flex items-center gap-2 cursor-pointer">
 									<input
 										type="checkbox"
@@ -513,7 +537,7 @@ const SelectorSimulations = () => {
 						</div>
 
 						{/* Col 2: 6-Axis Orientation & Quaternions */}
-						<div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-col gap-3">
+						<div className="p-4 rounded-xl bg-[#0b1f3a]/80 border border-[#1e2e4a] flex flex-col gap-3">
 							<div className="flex items-center justify-between text-slate-200 font-bold">
 								<span>🧭 MPU-6050 Orientation</span>
 								<span className="text-[10px] text-slate-500 font-normal">
@@ -522,15 +546,15 @@ const SelectorSimulations = () => {
 							</div>
 
 							<div className="grid grid-cols-3 gap-2 text-center">
-								<div className="p-2 rounded-lg bg-slate-900 border border-slate-800">
+								<div className="p-2 rounded-lg bg-[#121826] border border-[#1e2e4a]">
 									<div className="text-[10px] text-slate-400">Yaw (Z)</div>
 									<div className="text-cyan-400 font-bold text-sm">{gyroYaw}°</div>
 								</div>
-								<div className="p-2 rounded-lg bg-slate-900 border border-slate-800">
+								<div className="p-2 rounded-lg bg-[#121826] border border-[#1e2e4a]">
 									<div className="text-[10px] text-slate-400">Pitch (X)</div>
 									<div className="text-emerald-400 font-bold text-sm">{gyroPitch}°</div>
 								</div>
-								<div className="p-2 rounded-lg bg-slate-900 border border-slate-800">
+								<div className="p-2 rounded-lg bg-[#121826] border border-[#1e2e4a]">
 									<div className="text-[10px] text-slate-400">Roll (Y)</div>
 									<div className="text-purple-400 font-bold text-sm">{gyroRoll}°</div>
 								</div>
@@ -554,7 +578,7 @@ const SelectorSimulations = () => {
 						</div>
 
 						{/* Col 3: Cardboard / Headset Lens Profiles */}
-						<div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-col gap-3">
+						<div className="p-4 rounded-xl bg-[#0b1f3a]/80 border border-[#1e2e4a] flex flex-col gap-3">
 							<div className="flex items-center justify-between text-slate-200 font-bold">
 								<span>🥽 Lens & FOV Presets</span>
 							</div>
@@ -562,28 +586,28 @@ const SelectorSimulations = () => {
 							<div className="flex flex-col gap-2">
 								<button
 									type="button"
-									onClick={() => setSelectedProfile("s24_gear")}
+									onClick={() => setSelectedProfile("wide_fov")}
 									className={`p-2 rounded-lg text-left border transition-all ${
-										selectedProfile === "s24_gear"
+										selectedProfile === "wide_fov"
 											? "bg-cyan-500/20 border-cyan-400 text-cyan-300"
-											: "bg-slate-900 border-slate-800 text-slate-400 hover:text-white"
+											: "bg-[#121826] border-[#1e2e4a] text-slate-400 hover:text-white"
 									}`}
 								>
-									<div className="font-bold text-[11px]">Samsung S24 / Gear VR</div>
-									<div className="text-[10px] text-slate-500">FOV: 96° &bull; IPD: 62mm &bull; 120Hz Fast AMOLED</div>
+									<div className="font-bold text-[11px]">Wide FOV Headset (AMOLED / Fast LCD)</div>
+									<div className="text-[10px] text-slate-500">FOV: 96° &bull; IPD: 62mm &bull; Low Latency Mode</div>
 								</button>
 
 								<button
 									type="button"
-									onClick={() => setSelectedProfile("tecno_vrbox")}
+									onClick={() => setSelectedProfile("medium_fov")}
 									className={`p-2 rounded-lg text-left border transition-all ${
-										selectedProfile === "tecno_vrbox"
+										selectedProfile === "medium_fov"
 											? "bg-cyan-500/20 border-cyan-400 text-cyan-300"
-											: "bg-slate-900 border-slate-800 text-slate-400 hover:text-white"
+											: "bg-[#121826] border-[#1e2e4a] text-slate-400 hover:text-white"
 									}`}
 								>
-									<div className="font-bold text-[11px]">Tecno Spark 20C / VR Box</div>
-									<div className="text-[10px] text-slate-500">FOV: 85° &bull; IPD: 65mm &bull; 90Hz Fast LCD</div>
+									<div className="font-bold text-[11px]">Medium FOV Headset / VR Box</div>
+									<div className="text-[10px] text-slate-500">FOV: 85° &bull; IPD: 65mm &bull; Standard Mobile Lenses</div>
 								</button>
 
 								<button
@@ -592,11 +616,11 @@ const SelectorSimulations = () => {
 									className={`p-2 rounded-lg text-left border transition-all ${
 										selectedProfile === "cardboard"
 											? "bg-cyan-500/20 border-cyan-400 text-cyan-300"
-											: "bg-slate-900 border-slate-800 text-slate-400 hover:text-white"
+											: "bg-[#121826] border-[#1e2e4a] text-slate-400 hover:text-white"
 									}`}
 								>
-									<div className="font-bold text-[11px]">Google Cardboard V2</div>
-									<div className="text-[10px] text-slate-500">FOV: 68° &bull; IPD: 64mm &bull; Universal QR</div>
+									<div className="font-bold text-[11px]">Google Cardboard V2 / Universal</div>
+									<div className="text-[10px] text-slate-500">FOV: 68° &bull; IPD: 64mm &bull; Universal Optical QR</div>
 								</button>
 							</div>
 						</div>
@@ -606,7 +630,7 @@ const SelectorSimulations = () => {
 				{/* Device Ecosystem Status Matrix */}
 				<div className="w-full grid grid-cols-1 md:grid-cols-4 gap-4 mt-2">
 					{/* Unity VR Test Scene */}
-					<div className="rounded-xl bg-slate-900/60 border border-slate-800 p-4 backdrop-blur-md hover:border-cyan-500/40 transition-all flex flex-col justify-between">
+					<div className="rounded-xl bg-[#121826]/85 border border-[#1e2e4a] p-4 backdrop-blur-md hover:border-cyan-500/40 transition-all flex flex-col justify-between">
 						<div>
 							<div className="flex items-center justify-between mb-2">
 								<span className="text-lg">🖥️</span>
@@ -614,19 +638,19 @@ const SelectorSimulations = () => {
 									60 FPS Live
 								</span>
 							</div>
-							<h3 className="font-mono font-bold text-white text-sm">Unity VR Test Scene</h3>
+							<h3 className="font-mono font-bold text-white text-sm">Unity VR Streamer</h3>
 							<p className="text-[11px] text-slate-400 mt-1 font-mono">
-								Stand-alone VR test environment with physics cube & raycast interaction.
+								Universal HTTP MJPEG live viewport broadcast from Unity VR test scene.
 							</p>
 						</div>
-						<div className="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] font-mono text-slate-400">
+						<div className="mt-3 pt-2 border-t border-[#1e2e4a] flex items-center justify-between text-[11px] font-mono text-slate-400">
 							<span>Stream:</span>
 							<span className="text-emerald-400 font-semibold">http://localhost:8085</span>
 						</div>
 					</div>
 
 					{/* ESP32 DIY VR Controller */}
-					<div className="rounded-xl bg-slate-900/60 border border-slate-800 p-4 backdrop-blur-md hover:border-cyan-500/40 transition-all flex flex-col justify-between">
+					<div className="rounded-xl bg-[#121826]/85 border border-[#1e2e4a] p-4 backdrop-blur-md hover:border-cyan-500/40 transition-all flex flex-col justify-between">
 						<div>
 							<div className="flex items-center justify-between mb-2">
 								<span className="text-lg">🕹️</span>
@@ -639,47 +663,47 @@ const SelectorSimulations = () => {
 								6-Axis MPU-6050 quaternion fusion + Joystick + 3 tactile buttons.
 							</p>
 						</div>
-						<div className="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] font-mono text-slate-400">
+						<div className="mt-3 pt-2 border-t border-[#1e2e4a] flex items-center justify-between text-[11px] font-mono text-slate-400">
 							<span>Port:</span>
 							<span className="text-cyan-400 font-semibold">COM5 / UDP 8888</span>
 						</div>
 					</div>
 
-					{/* Samsung Galaxy S24 */}
-					<div className="rounded-xl bg-slate-900/60 border border-slate-800 p-4 backdrop-blur-md hover:border-cyan-500/40 transition-all flex flex-col justify-between">
+					{/* Primary Mobile VR Headset */}
+					<div className="rounded-xl bg-[#121826]/85 border border-[#1e2e4a] p-4 backdrop-blur-md hover:border-cyan-500/40 transition-all flex flex-col justify-between">
 						<div>
 							<div className="flex items-center justify-between mb-2">
 								<span className="text-lg">📱</span>
 								<span className="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 font-mono text-[10px] font-bold border border-cyan-500/30">
-									120Hz AMOLED
+									{sortedKeys.length > 0 ? "Connected" : "Auto-Detect"}
 								</span>
 							</div>
-							<h3 className="font-mono font-bold text-white text-sm">Samsung Galaxy S24</h3>
+							<h3 className="font-mono font-bold text-white text-sm">Primary VR Headset</h3>
 							<p className="text-[11px] text-slate-400 mt-1 font-mono">
-								Low-latency H.265 hardware decoding with Unity Cardboard XR.
+								Low-latency WebCodecs H.265 / H.264 hardware stream to any connected mobile phone.
 							</p>
 						</div>
-						<div className="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] font-mono text-slate-400">
+						<div className="mt-3 pt-2 border-t border-[#1e2e4a] flex items-center justify-between text-[11px] font-mono text-slate-400">
 							<span>Cast:</span>
 							<span className="text-emerald-400 font-semibold">ws://localhost:8082</span>
 						</div>
 					</div>
 
-					{/* Tecno Spark 20C */}
-					<div className="rounded-xl bg-slate-900/60 border border-slate-800 p-4 backdrop-blur-md hover:border-cyan-500/40 transition-all flex flex-col justify-between">
+					{/* Secondary Mobile Client */}
+					<div className="rounded-xl bg-[#121826]/85 border border-[#1e2e4a] p-4 backdrop-blur-md hover:border-cyan-500/40 transition-all flex flex-col justify-between">
 						<div>
 							<div className="flex items-center justify-between mb-2">
 								<span className="text-lg">📱</span>
 								<span className="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 font-mono text-[10px] font-bold border border-cyan-500/30">
-									90Hz Fast LCD
+									{sortedKeys.length > 1 ? "Connected" : "Standby"}
 								</span>
 							</div>
-							<h3 className="font-mono font-bold text-white text-sm">Tecno Spark 20C</h3>
+							<h3 className="font-mono font-bold text-white text-sm">Secondary VR Client</h3>
 							<p className="text-[11px] text-slate-400 mt-1 font-mono">
-								Cardboard 6DoF simulation stream with direct ADB TCP/IP connection.
+								Multi-device simultaneous viewer stream over Wi-Fi & ADB TCP/IP.
 							</p>
 						</div>
-						<div className="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] font-mono text-slate-400">
+						<div className="mt-3 pt-2 border-t border-[#1e2e4a] flex items-center justify-between text-[11px] font-mono text-slate-400">
 							<span>Cast:</span>
 							<span className="text-emerald-400 font-semibold">ws://localhost:8082</span>
 						</div>
@@ -687,25 +711,25 @@ const SelectorSimulations = () => {
 				</div>
 
 				{/* 3-Step Quick Wireless Testing Guide */}
-				<div className="w-full rounded-2xl bg-slate-900/50 border border-slate-800 p-6 backdrop-blur-md">
+				<div className="w-full rounded-2xl bg-[#121826]/85 border border-[#1e2e4a] p-6 backdrop-blur-md shadow-xl">
 					<h3 className="font-mono font-bold text-white text-sm mb-3 flex items-center gap-2">
 						<span>⚡</span>
 						<span>Quick Wireless Test Workflow</span>
 					</h3>
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono text-slate-300">
-						<div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
+						<div className="p-3 rounded-xl bg-[#0b1f3a]/80 border border-[#1e2e4a]">
 							<div className="text-cyan-400 font-bold mb-1">Step 1: Start Bridge</div>
 							<p className="text-slate-400 text-[11px]">
 								Run <code className="text-cyan-300">.\start_controller_bridge.ps1</code> in PowerShell to stream ESP32 telemetry on UDP 8888.
 							</p>
 						</div>
-						<div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
+						<div className="p-3 rounded-xl bg-[#0b1f3a]/80 border border-[#1e2e4a]">
 							<div className="text-cyan-400 font-bold mb-1">Step 2: Press Play in Unity</div>
 							<p className="text-slate-400 text-[11px]">
 								Open Unity project on Drive H, ensure <code className="text-cyan-300">UnityLiveWebStreamer</code> is on Main Camera, and press Play ▶️.
 							</p>
 						</div>
-						<div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
+						<div className="p-3 rounded-xl bg-[#0b1f3a]/80 border border-[#1e2e4a]">
 							<div className="text-cyan-400 font-bold mb-1">Step 3: Watch Live & Record</div>
 							<p className="text-slate-400 text-[11px]">
 								The live viewport in the White Frame will automatically render over Wi-Fi! Click <code className="text-cyan-300">🥽 Stereo</code> for Cardboard VR or <code className="text-cyan-300">⏺ Record</code> to save a session clip.

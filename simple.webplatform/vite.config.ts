@@ -11,11 +11,14 @@ export default defineConfig(({ mode }) => {
 	}
 
 	// reusable config for both server and preview
+	const configuredPort = env.WEB_APPLICATION_PORT ? Number(env.WEB_APPLICATION_PORT) : 5173;
+	const targetPort = Number.isNaN(configuredPort) || configuredPort <= 0 ? 5173 : configuredPort;
+
 	const serverConfig = {
 		host: env.WEB_APPLICATION_HOST || "0.0.0.0",
-		port: Number(env.WEB_APPLICATION_PORT),
-		strictPort: true,
-		allowedHosts: ["simple.local", `${env.WEB_HOSTNAME}.local`],
+		port: targetPort,
+		strictPort: false,
+		allowedHosts: ["simple.local", `${env.WEB_HOSTNAME || "jakkho"}.local`],
 	};
 
 	return {

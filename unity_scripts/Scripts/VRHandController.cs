@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace DIYVR
 {
@@ -11,6 +11,7 @@ namespace DIYVR
     /// <summary>
     /// Controls the 3D VR hand/wand model by applying rotation from the ESP32
     /// and simulating realistic 6-DoF position using an arm-kinematics model.
+    /// If no BLE controller is connected, gracefully falls back to Head-Gaze tracking.
     /// </summary>
     public class VRHandController : MonoBehaviour
     {
@@ -42,25 +43,46 @@ namespace DIYVR
 
         private void LateUpdate()
         {
-            if (BLEControllerReceiver.Instance == null) return;
-
-            ControllerState state = BLEControllerReceiver.Instance.CurrentState;
-
-            // 1. Handle Recenter / Tare button (Button 3)
-            if (state.RecenterDown)
+            if (headCamera == null && Camera.main != null)
             {
-                RecenterController(state.RawRotation);
+                headCamera = Camera.main.transform;
             }
 
-            // 2. Compute Calibrated Controller Rotation
-            Quaternion controllerRotation = _yawOffset * state.RawRotation;
+            bool hasBleController = (BLEControllerReceiver.Instance != null && BLEControllerReceiver.Instance.isConnected);
 
-            // 3. Compute Simulated Arm / Hand Position
-            Vector3 handPosition = CalculateArmModelPosition(controllerRotation);
+            if (hasBleController)
+            {
+                ControllerState state = BLEControllerReceiver.Instance.CurrentState;
 
-            // 4. Smoothly apply transform
-            transform.position = Vector3.Lerp(transform.position, handPosition, Time.deltaTime * smoothingFactor);
-            transform.rotation = Quaternion.Slerp(transform.rotation, controllerRotation, Time.deltaTime * smoothingFactor);
+                // 1. Handle Recenter / Tare button (Button 3)
+                if (state.RecenterDown)
+                {
+                    RecenterController(state.RawRotation);
+                }
+
+                // 2. Compute Calibrated Controller Rotation
+                Quaternion controllerRotation = _yawOffset * state.RawRotation;
+
+                // 3. Compute Simulated Arm / Hand Position
+                Vector3 handPosition = CalculateArmModelPosition(controllerRotation);
+
+                // 4. Smoothly apply transform
+                transform.position = Vector3.Lerp(transform.position, handPosition, Time.deltaTime * smoothingFactor);
+                transform.rotation = Quaternion.Slerp(transform.rotation, controllerRotation, Time.deltaTime * smoothingFactor);
+            }
+            else if (headCamera != null)
+            {
+                // Fallback: Laser pointer / Hand follows Head Camera gaze with natural lower-right offset
+                Vector3 shoulderOffset = (handedness == Handedness.RightHand) 
+                    ? new Vector3(0.15f, -0.15f, 0.35f) 
+                    : new Vector3(-0.15f, -0.15f, 0.35f);
+
+                Vector3 targetPos = headCamera.TransformPoint(shoulderOffset);
+                Quaternion targetRot = headCamera.rotation;
+
+                transform.position = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * smoothingFactor);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * smoothingFactor);
+            }
         }
 
         /// <summary>

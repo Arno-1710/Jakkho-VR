@@ -45,15 +45,22 @@ namespace DIYVR
         [Header("Stream Quality Settings")]
         [Range(15, 60)]
         [Tooltip("Target frames per second for stream")]
-        public int targetFps = 30;
+        public int targetFps = 60;
 
         [Range(360, 1080)]
         [Tooltip("Stream vertical resolution (height in pixels)")]
-        public int streamHeight = 720;
+        public int streamHeight = 1080;
 
         [Range(20, 95)]
         [Tooltip("JPEG compression quality (lower = lower latency, higher = crisper)")]
-        public int jpgQuality = 70;
+        public int jpgQuality = 90;
+
+        [Header("Browser Auto-Launch")]
+        [Tooltip("Automatically open your web browser to the casting screen when Unity enters Play mode")]
+        public bool autoOpenBrowserOnPlay = false;
+
+        [Tooltip("Web port where the JAKKHO Webcasting Platform is hosted (default: 5173 or 3000)")]
+        public int webPlatformPort = 5173;
 
         [Header("Live Diagnostics")]
         public bool isMjpegServerRunning = false;
@@ -91,7 +98,48 @@ namespace DIYVR
             public bool IsAlive = true;
         }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void AutoAttachToMainCamera()
+        {
+#if UNITY_2023_1_OR_NEWER || UNITY_6000_0_OR_NEWER
+            UnityLiveWebStreamer existing = FindAnyObjectByType<UnityLiveWebStreamer>();
+#else
+            UnityLiveWebStreamer existing = FindObjectOfType<UnityLiveWebStreamer>();
+#endif
+            if (existing == null)
+            {
+                Camera mainCam = Camera.main;
+                if (mainCam != null)
+                {
+                    mainCam.gameObject.AddComponent<UnityLiveWebStreamer>();
+                    Debug.Log("<color=#00f5d4>[JAKKHO Streamer] Auto-attached UnityLiveWebStreamer to Main Camera.</color>");
+                }
+                else
+                {
+                    GameObject streamerGO = new GameObject("JAKKHO_WebCaster");
+                    streamerGO.AddComponent<UnityLiveWebStreamer>();
+                    DontDestroyOnLoad(streamerGO);
+                    Debug.Log("<color=#00f5d4>[JAKKHO Streamer] Spawned standalone JAKKHO_WebCaster in scene.</color>");
+                }
+            }
+        }
+
         private void Awake()
+        {
+            FindTargetCamera();
+        }
+
+        private void OnEnable()
+        {
+            UnityEngine.Rendering.RenderPipelineManager.endCameraRendering += OnEndCameraRendering;
+        }
+
+        private void OnDisable()
+        {
+            UnityEngine.Rendering.RenderPipelineManager.endCameraRendering -= OnEndCameraRendering;
+        }
+
+        private void FindTargetCamera()
         {
             if (targetCamera != null)
             {
@@ -100,11 +148,21 @@ namespace DIYVR
             else
             {
                 _camera = GetComponent<Camera>() ?? GetComponentInChildren<Camera>() ?? Camera.main;
+                if (_camera == null)
+                {
+#if UNITY_2023_1_OR_NEWER || UNITY_6000_0_OR_NEWER
+                    Camera[] cams = FindObjectsByType<Camera>(FindObjectsSortMode.None);
+#else
+                    Camera[] cams = FindObjectsOfType<Camera>();
+#endif
+                    if (cams.Length > 0) _camera = cams[0];
+                }
             }
         }
 
         private void Start()
         {
+            FindTargetCamera();
             InitializeTextures();
             CalculateUrls();
 
@@ -118,8 +176,35 @@ namespace DIYVR
                 StartCoroutine(WebSocketLoopCoroutine());
             }
 
+            if (autoOpenBrowserOnPlay)
+            {
+                string targetWebUrl = $"http://localhost:{webPlatformPort}/cast";
+                Application.OpenURL(targetWebUrl);
+                Debug.Log($"<color=#00f5d4>[JAKKHO Streamer] Auto-opened browser cast at {targetWebUrl}</color>");
+            }
+
             Debug.Log($"<color=#00f5d4>[JAKKHO Streamer] Initialized! Stream URLs:\n- Localhost: {localStreamUrl}\n- LAN (Wi-Fi): {lanStreamUrl}</color>");
         }
+
+#if UNITY_EDITOR
+        [UnityEditor.MenuItem("JAKKHO VR/Open Webcast in Browser (5173)", false, 1)]
+        public static void OpenWebcastBrowser5173()
+        {
+            Application.OpenURL("http://localhost:5173/cast");
+        }
+
+        [UnityEditor.MenuItem("JAKKHO VR/Open Webcast in Browser (3000)", false, 2)]
+        public static void OpenWebcastBrowser3000()
+        {
+            Application.OpenURL("http://localhost:3000/cast");
+        }
+
+        [UnityEditor.MenuItem("JAKKHO VR/Open Direct MJPEG Stream (8085)", false, 3)]
+        public static void OpenDirectMjpegStream()
+        {
+            Application.OpenURL("http://localhost:8085/live.mjpg");
+        }
+#endif
 
         private void CalculateUrls()
         {
@@ -150,7 +235,8 @@ namespace DIYVR
             int streamWidth = Mathf.RoundToInt(streamHeight * (16f / 9f));
             _renderTexture = new RenderTexture(streamWidth, streamHeight, 24, RenderTextureFormat.ARGB32)
             {
-                antiAliasing = 2
+                antiAliasing = 4,
+                filterMode = FilterMode.Bilinear
             };
             _frameTexture = new Texture2D(streamWidth, streamHeight, TextureFormat.RGB24, false);
         }
@@ -236,6 +322,7 @@ namespace DIYVR
             context.Response.AddHeader("Access-Control-Allow-Origin", "*");
             context.Response.AddHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
             context.Response.AddHeader("Access-Control-Allow-Headers", "*");
+            context.Response.AddHeader("Cross-Origin-Resource-Policy", "cross-origin");
 
             if (context.Request.HttpMethod == "OPTIONS")
             {
@@ -377,18 +464,25 @@ namespace DIYVR
         {
             if (_camera == null)
             {
-                if (targetCamera != null) _camera = targetCamera;
-                else _camera = GetComponent<Camera>() ?? GetComponentInChildren<Camera>() ?? Camera.main;
-                if (_camera == null)
-                {
-                    Camera[] cams = FindObjectsByType<Camera>(FindObjectsSortMode.None);
-                    if (cams.Length > 0) _camera = cams[0];
-                }
+                FindTargetCamera();
             }
 
             if (_renderTexture == null || _frameTexture == null)
             {
                 InitializeTextures();
+            }
+        }
+
+        private void OnEndCameraRendering(UnityEngine.Rendering.ScriptableRenderContext context, Camera cam)
+        {
+            if (cam == _camera || (_camera == null && cam == Camera.main))
+            {
+                float frameInterval = 1f / targetFps;
+                if (Time.time - _lastFrameTime >= frameInterval)
+                {
+                    _lastFrameTime = Time.time;
+                    CaptureFrameFromRenderedCamera(cam);
+                }
             }
         }
 
@@ -402,12 +496,44 @@ namespace DIYVR
                 _fpsTimer = 0f;
             }
 
-            float frameInterval = 1f / targetFps;
-            if (Time.time - _lastFrameTime >= frameInterval)
+            // If using Built-in Render Pipeline (no SRP active), capture from LateUpdate
+            if (UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline == null)
             {
-                _lastFrameTime = Time.time;
-                CaptureFrame();
+                float frameInterval = 1f / targetFps;
+                if (Time.time - _lastFrameTime >= frameInterval)
+                {
+                    _lastFrameTime = Time.time;
+                    CaptureFrame();
+                }
             }
+        }
+
+        private void CaptureFrameFromRenderedCamera(Camera cam)
+        {
+            EnsureResources();
+            if (cam == null || _renderTexture == null || _frameTexture == null) return;
+
+            RenderTexture currentRT = RenderTexture.active;
+            if (cam.targetTexture != null)
+            {
+                Graphics.Blit(cam.targetTexture, _renderTexture);
+                RenderTexture.active = _renderTexture;
+                _frameTexture.ReadPixels(new Rect(0, 0, _renderTexture.width, _renderTexture.height), 0, 0);
+            }
+            else
+            {
+                RenderTexture prevTarget = cam.targetTexture;
+                cam.targetTexture = _renderTexture;
+                cam.Render();
+                cam.targetTexture = prevTarget;
+
+                RenderTexture.active = _renderTexture;
+                _frameTexture.ReadPixels(new Rect(0, 0, _renderTexture.width, _renderTexture.height), 0, 0);
+            }
+            _frameTexture.Apply();
+            RenderTexture.active = currentRT;
+
+            ProcessEncodedFrame();
         }
 
         private void CaptureFrame()
@@ -428,6 +554,11 @@ namespace DIYVR
 
             RenderTexture.active = currentRT;
 
+            ProcessEncodedFrame();
+        }
+
+        private void ProcessEncodedFrame()
+        {
             byte[] jpgBytes = _frameTexture.EncodeToJPG(jpgQuality);
             if (jpgBytes != null && jpgBytes.Length > 0)
             {

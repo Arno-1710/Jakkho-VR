@@ -11,16 +11,20 @@ interface PlayerScreenCanvasProps {
 
 const getDeviceLabel = (rawId: string) => {
 	const str = rawId.toLowerCase();
-	if (str.includes("unity") || str.includes("pc")) return "Unity VR PC (Wi-Fi Live)";
-	if (str.includes("tecno") || str.includes("bg7") || str.includes(".50") || str.includes("50:")) return "Tecno Spark 20C (90Hz)";
-	if (str.includes("samsung") || str.includes("s24") || str.includes("sm-s92") || str.includes(".51") || str.includes("51:")) return "Samsung Galaxy S24 (120Hz)";
-	if (str.includes("quest")) return "Meta Quest (VR)";
-	return `Device: ${rawId}`;
+	if (str.includes("unity") || str.includes("pc")) return "Unity VR Stream";
+	if (str.includes("auto")) return "Auto-Detected Stream";
+	if (str.includes(".")) {
+		const ip = rawId.split(":")[0];
+		return `VR Headset (${ip})`;
+	}
+	if (str === "standby") return "VR Stream Standby";
+	return `Connected Device (${rawId})`;
 };
 
 const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, needsInteractivity }: PlayerScreenCanvasProps) => {
 	const canvasref = useRef<HTMLDivElement>(null);
 	const popupref = useRef<HTMLDivElement>(null);
+	const containerRef = useRef<HTMLDivElement>(null);
 	const stereoRightCanvasRef = useRef<HTMLCanvasElement>(null);
 	const [showPopup, setShowPopup] = useState<boolean>(false);
 	const [isRecording, setIsRecording] = useState<boolean>(false);
@@ -28,6 +32,7 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 	const [isStereoMode, setIsStereoMode] = useState<boolean>(false);
 	const [ipdOffset, setIpdOffset] = useState<number>(64); // mm IPD (default 64mm)
 	const [lensZoom, setLensZoom] = useState<number>(1.0); // 0.8x - 1.2x
+	const [snapshotToast, setSnapshotToast] = useState<string | null>(null);
 
 	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 	const recordedChunksRef = useRef<Blob[]>([]);
@@ -177,37 +182,96 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 		setIsRecording(false);
 	};
 
-	// Instant Snapshot
-	const handleSnapshot = (e: React.MouseEvent) => {
+	// Instant Full Quality Snapshot Capture
+	const handleSnapshot = async (e: React.MouseEvent) => {
 		e.stopPropagation();
-		if (!canvas) {
-			const img = canvasref.current?.querySelector("img");
-			if (img) {
-				const c = document.createElement("canvas");
-				c.width = img.naturalWidth || 1280;
-				c.height = img.naturalHeight || 720;
-				const ctx = c.getContext("2d");
-				if (ctx) {
-					ctx.drawImage(img, 0, 0);
-					const url = c.toDataURL("image/png");
+
+		// Priority 1: Direct snapshot from Unity stream endpoint (full 1080p native resolution)
+		if (streamUrl) {
+			try {
+				const host = typeof window !== "undefined" ? window.location.hostname || "localhost" : "localhost";
+				const snapUrl = `http://${host}:8085/snapshot.jpg?t=${Date.now()}`;
+				const res = await fetch(snapUrl, { mode: "cors" });
+				if (res.ok) {
+					const blob = await res.blob();
+					const url = URL.createObjectURL(blob);
 					const a = document.createElement("a");
 					a.href = url;
-					a.download = `JAKKHO_Snap_${(id || "feed").replace(/[:.]/g, "_")}_${Date.now()}.png`;
+					a.download = `JAKKHO_VR_Snap_${(id || "unity").replace(/[:.]/g, "_")}_${Date.now()}.jpg`;
+					document.body.appendChild(a);
 					a.click();
+					document.body.removeChild(a);
+					URL.revokeObjectURL(url);
+					setSnapshotToast("📸 Snapshot Saved!");
+					setTimeout(() => setSnapshotToast(null), 2500);
 					return;
 				}
+			} catch (err) {
+				console.warn("Direct snapshot endpoint fetch failed, falling back to canvas capture:", err);
 			}
-			return;
 		}
-		try {
-			const url = canvas.toDataURL("image/png");
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = `JAKKHO_Stream_${(id || "feed").replace(/[:.]/g, "_")}_${Date.now()}.png`;
-			a.click();
-		} catch (err) {
-			console.warn("Snapshot failed:", err);
+
+		// Priority 2: Canvas stream (WebCodecs / Phone scrcpy)
+		let targetCanvas = canvas;
+		if (!targetCanvas && canvasref.current?.querySelector("canvas")) {
+			targetCanvas = canvasref.current.querySelector("canvas");
 		}
+
+		if (targetCanvas) {
+			try {
+				targetCanvas.toBlob((blob) => {
+					if (blob) {
+						const url = URL.createObjectURL(blob);
+						const a = document.createElement("a");
+						a.href = url;
+						a.download = `JAKKHO_VR_Snap_${(id || "stream").replace(/[:.]/g, "_")}_${Date.now()}.png`;
+						document.body.appendChild(a);
+						a.click();
+						document.body.removeChild(a);
+						URL.revokeObjectURL(url);
+						setSnapshotToast("📸 Snapshot Saved!");
+						setTimeout(() => setSnapshotToast(null), 2500);
+					}
+				}, "image/png");
+				return;
+			} catch (err) {
+				console.warn("Canvas blob capture failed:", err);
+			}
+		}
+
+		// Priority 3: Extract from rendered <img> element
+		const img = containerRef.current?.querySelector("img") || canvasref.current?.querySelector("img");
+		if (img) {
+			try {
+				const c = document.createElement("canvas");
+				c.width = img.naturalWidth || 1920;
+				c.height = img.naturalHeight || 1080;
+				const ctx = c.getContext("2d");
+				if (ctx) {
+					ctx.drawImage(img, 0, 0, c.width, c.height);
+					c.toBlob((blob) => {
+						if (blob) {
+							const url = URL.createObjectURL(blob);
+							const a = document.createElement("a");
+							a.href = url;
+							a.download = `JAKKHO_VR_Snap_${(id || "feed").replace(/[:.]/g, "_")}_${Date.now()}.png`;
+							document.body.appendChild(a);
+							a.click();
+							document.body.removeChild(a);
+							URL.revokeObjectURL(url);
+							setSnapshotToast("📸 Snapshot Saved!");
+							setTimeout(() => setSnapshotToast(null), 2500);
+						}
+					}, "image/png");
+					return;
+				}
+			} catch (err) {
+				console.warn("Image canvas capture failed:", err);
+			}
+		}
+
+		setSnapshotToast("⚠️ Standby: No active frame");
+		setTimeout(() => setSnapshotToast(null), 2500);
 	};
 
 	// Direct Mobile Fullscreen Mode for Google Cardboard
@@ -228,32 +292,72 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 
 	const [streamImgError, setStreamImgError] = useState<boolean>(false);
 	const [streamKey, setStreamKey] = useState<number>(0);
+	const [isStreamLive, setIsStreamLive] = useState<boolean>(false);
 
-	// Periodic auto-retry when stream is in error state
+	// High-speed Active Probe Loop: Instant Auto-Connect without refreshing
 	useEffect(() => {
-		if (streamImgError && streamUrl) {
-			const timer = setInterval(() => {
-				setStreamKey((k) => k + 1);
-				setStreamImgError(false);
-			}, 3000);
-			return () => clearInterval(timer);
-		}
-	}, [streamImgError, streamUrl]);
+		if (!streamUrl) return;
+
+		let isMounted = true;
+		const probeHost = typeof window !== "undefined" ? window.location.hostname || "localhost" : "localhost";
+		const probeUrl = `http://${probeHost}:8085/snapshot.jpg`;
+
+		const probe = async () => {
+			let live = false;
+			try {
+				const controller = new AbortController();
+				const timeoutId = setTimeout(() => controller.abort(), 1200);
+				await fetch(`${probeUrl}?t=${Date.now()}`, {
+					method: "HEAD",
+					mode: "no-cors",
+					signal: controller.signal,
+				});
+				clearTimeout(timeoutId);
+				live = true;
+			} catch {
+				live = false;
+			}
+
+			if (!isMounted) return;
+
+			if (live) {
+				setIsStreamLive(true);
+				if (streamImgError) {
+					// Unity just became available! Immediately reload stream image without refreshing
+					setStreamImgError(false);
+					setStreamKey((k) => k + 1);
+				}
+			} else {
+				setIsStreamLive(false);
+				setStreamImgError(true);
+			}
+		};
+
+		// Run immediate check
+		probe();
+
+		// Fast probe interval (800ms when offline for instant connect, 2500ms when online)
+		const interval = setInterval(probe, isStreamLive ? 2500 : 800);
+		return () => {
+			isMounted = false;
+			clearInterval(interval);
+		};
+	}, [streamUrl, isStreamLive, streamImgError]);
 
 	return (
 		<>
 			{/* Popup Modal / Fullscreen Stereo VR Dialog */}
 			{showPopup && (
 				<div
-					className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-xl p-2 md:p-4 w-screen h-screen"
+					className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1f3a]/90 backdrop-blur-xl p-2 md:p-4 w-screen h-screen"
 					onClick={() => setShowPopup(false)}
 				>
 					<div
-						className="relative bg-slate-900 border-2 border-cyan-500/50 rounded-2xl p-4 shadow-2xl flex flex-col w-[96vw] h-[92vh] max-w-[1920px] max-h-[96vh]"
+						className="relative bg-[#121826] border border-cyan-500/40 rounded-2xl p-4 shadow-2xl flex flex-col w-[96vw] h-[92vh] max-w-[1920px] max-h-[96vh]"
 						onClick={(e) => e.stopPropagation()}
 					>
 						{/* Modal Top Bar */}
-						<div className="w-full flex-shrink-0 flex items-center justify-between pb-3 mb-2 border-b border-slate-800">
+						<div className="w-full flex-shrink-0 flex items-center justify-between pb-3 mb-2 border-b border-[#1e2e4a]">
 							<div className="flex items-center gap-2">
 								<span className="font-mono font-bold text-cyan-400 text-sm md:text-base">{getDeviceLabel(id)}</span>
 								<span className="text-xs text-slate-400 font-mono hidden sm:inline">({id})</span>
@@ -405,7 +509,7 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 			)}
 
 			{/* Main White Bezel Frame */}
-			<div className="relative pt-6 w-full h-full flex flex-col items-center justify-center p-2">
+			<div ref={containerRef} className="relative pt-6 w-full h-full max-w-full aspect-video flex flex-col items-center justify-center p-1">
 				{/* Top JAKKHO Tab Badge */}
 				<div className="absolute top-1 left-1/2 -translate-x-1/2 bg-white px-5 py-1 rounded-t-xl shadow-md border-t-2 border-x-2 border-slate-100 flex items-center justify-center gap-1.5 z-30 pointer-events-auto">
 					<span className="font-extrabold text-slate-900 tracking-wider text-xs font-mono flex items-center gap-1">
@@ -415,31 +519,31 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 
 				{/* Custom White Frame */}
 				<div
-					className="relative group rounded-2xl p-1.5 bg-white border-4 border-white shadow-2xl transition-all duration-300 flex flex-col items-center justify-center overflow-hidden w-full h-full jakkho-frame-glow cursor-pointer"
+					className="relative group rounded-2xl p-1.5 bg-white border-4 border-white shadow-2xl transition-all duration-300 flex flex-col items-center justify-center overflow-hidden w-full h-full max-w-full aspect-video jakkho-frame-glow cursor-pointer"
 					onClick={needsInteractivity && !isPlaceholder ? () => setShowPopup(true) : undefined}
 				>
 					{!isPlaceholder ? (
 						<>
 							{/* Stream view: Either MJPEG image or WebCodecs canvas */}
 							{isStereoMode ? (
-								<div className="w-full h-full grid grid-cols-2 gap-0.5 bg-black rounded-xl overflow-hidden relative">
+								<div className="w-full h-full grid grid-cols-2 gap-0.5 bg-black rounded-xl overflow-hidden relative aspect-video">
 									<div className="absolute top-0 bottom-0 left-1/2 w-[1px] bg-slate-800 z-10" />
 									<div className="w-full h-full border-r border-slate-800 overflow-hidden flex items-center justify-center bg-slate-950">
 										{streamUrl && !streamImgError ? (
-											<img key={`card-left-${streamKey}`} src={streamUrl} alt="Left Eye" className="w-full h-full object-contain" onError={() => setStreamImgError(true)} />
+											<img key={`card-left-${streamKey}`} src={streamUrl} crossOrigin="anonymous" alt="Left Eye" className="w-full h-full object-contain aspect-video" onError={() => setStreamImgError(true)} />
 										) : streamUrl && streamImgError ? (
 											<div className="text-center font-mono text-[10px] text-cyan-400">LEFT EYE [STANDBY]</div>
 										) : (
-											<div ref={canvasref} className="w-full h-full" />
+											<div ref={canvasref} className="w-full h-full aspect-video" />
 										)}
 									</div>
 									<div className="w-full h-full overflow-hidden flex items-center justify-center bg-slate-950">
 										{streamUrl && !streamImgError ? (
-											<img key={`card-right-${streamKey}`} src={streamUrl} alt="Right Eye" className="w-full h-full object-contain" onError={() => setStreamImgError(true)} />
+											<img key={`card-right-${streamKey}`} src={streamUrl} crossOrigin="anonymous" alt="Right Eye" className="w-full h-full object-contain aspect-video" onError={() => setStreamImgError(true)} />
 										) : streamUrl && streamImgError ? (
 											<div className="text-center font-mono text-[10px] text-purple-400">RIGHT EYE [STANDBY]</div>
 										) : (
-											<canvas ref={stereoRightCanvasRef} className="w-full h-full object-contain" />
+											<canvas ref={stereoRightCanvasRef} className="w-full h-full object-contain aspect-video" />
 										)}
 									</div>
 								</div>
@@ -447,12 +551,13 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 								<img
 									key={`card-mono-${streamKey}`}
 									src={streamUrl}
+									crossOrigin="anonymous"
 									alt="JAKKHO Live Stream"
-									className="w-full h-full object-contain rounded-xl bg-black"
+									className="w-full h-full object-contain rounded-xl bg-black aspect-video"
 									onError={() => setStreamImgError(true)}
 								/>
 							) : streamUrl && streamImgError ? (
-								<div className="w-full h-full rounded-xl bg-slate-950 flex flex-col items-center justify-center p-6 text-center border border-slate-800 relative overflow-hidden">
+								<div className="w-full h-full rounded-xl bg-slate-950 flex flex-col items-center justify-center p-6 text-center border border-slate-800 relative overflow-hidden aspect-video">
 									<div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mb-2 animate-pulse">
 										<span className="text-2xl font-mono text-cyan-400">◆</span>
 									</div>
@@ -470,25 +575,37 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 							) : (
 								<div
 									ref={canvasref}
-									className="w-full h-full object-cover rounded-xl bg-slate-950 flex items-center justify-center overflow-hidden relative"
+									className="w-full h-full object-contain rounded-xl bg-slate-950 flex items-center justify-center overflow-hidden relative aspect-video"
 								/>
 							)}
 
 							{/* Top floating status badges */}
 							{!hideInfos && (
 								<div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none z-20">
-									<div className="px-2.5 py-1 rounded-lg bg-slate-950/85 backdrop-blur-md font-mono text-[11px] font-bold text-white border border-cyan-400/50 shadow-md">
-										{getDeviceLabel(id)}
+									<div className="px-2.5 py-1 rounded-lg bg-slate-950/85 backdrop-blur-md font-mono text-[11px] font-bold text-white border border-cyan-400/50 shadow-md flex items-center gap-1.5">
+										<span className={`w-2 h-2 rounded-full ${!streamImgError ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
+										<span>{getDeviceLabel(id)}</span>
 									</div>
 									<div className="flex items-center gap-2">
+										{snapshotToast && (
+											<div className="px-2.5 py-0.5 rounded-lg bg-emerald-600/90 border border-emerald-400 text-white font-mono text-[10px] font-bold flex items-center gap-1 animate-bounce shadow-md pointer-events-auto">
+												<span>{snapshotToast}</span>
+											</div>
+										)}
 										{isRecording && (
 											<div className="px-2.5 py-0.5 rounded-lg bg-red-600/90 border border-red-400 text-white font-mono text-[10px] font-bold flex items-center gap-1 animate-pulse">
 												<span className="w-2 h-2 rounded-full bg-white" />
 												<span>REC {formatTime(recordDuration)}</span>
 											</div>
 										)}
-										<div className="px-2 py-0.5 rounded-lg bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 font-mono text-[10px] font-semibold">
-											LIVE
+										<div
+											className={`px-2 py-0.5 rounded-lg font-mono text-[10px] font-semibold border ${
+												!streamImgError
+													? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
+													: "bg-amber-500/20 border-amber-500/50 text-amber-400"
+											}`}
+										>
+											{!streamImgError ? "LIVE" : "STANDBY"}
 										</div>
 									</div>
 								</div>
@@ -566,7 +683,7 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 								JAKKHO Standby Stream
 							</h3>
 							<p className="text-xs text-slate-400 max-w-xs font-mono mb-3">
-								Waiting for Unity PC VR / Samsung S24 / Tecno Spark 20C Wi-Fi stream...
+								Waiting for live VR stream from Unity or any connected headset/device...
 							</p>
 							<div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-700 text-[11px] font-mono text-slate-300">
 								<span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />

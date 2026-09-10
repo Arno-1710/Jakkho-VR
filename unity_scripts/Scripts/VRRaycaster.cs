@@ -1,12 +1,15 @@
-using UnityEngine;
-using UnityEngine.EventSystems;
+﻿using UnityEngine;
 using UnityEngine.UI;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 namespace DIYVR
 {
     /// <summary>
-    /// Projects a laser pointer ray from the controller tip, interacts with
+    /// Projects a laser pointer ray from the controller or gaze tip, interacts with
     /// World Space UI elements and 3D objects implementing IVRInteractable.
+    /// Compatible with both New Input System and Legacy Input.
     /// </summary>
     [RequireComponent(typeof(LineRenderer))]
     public class VRRaycaster : MonoBehaviour
@@ -36,8 +39,39 @@ namespace DIYVR
 
         private void Update()
         {
-            if (BLEControllerReceiver.Instance == null) return;
-            ControllerState state = BLEControllerReceiver.Instance.CurrentState;
+            ControllerState state = (BLEControllerReceiver.Instance != null)
+                ? BLEControllerReceiver.Instance.CurrentState
+                : new ControllerState();
+
+            // 1. New Input System Check (Touch / Mouse Click)
+            #if ENABLE_INPUT_SYSTEM
+            var ts = Touchscreen.current;
+            if (ts != null && ts.primaryTouch.press.wasPressedThisFrame)
+            {
+                state.TriggerDown = true;
+            }
+            var mouse = Mouse.current;
+            if (mouse != null && mouse.leftButton.wasPressedThisFrame)
+            {
+                state.TriggerDown = true;
+            }
+            #endif
+
+            // 2. Legacy Input Fallback
+            #if ENABLE_LEGACY_INPUT_MANAGER
+            try
+            {
+                if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)
+                {
+                    state.TriggerDown = true;
+                }
+                if (Input.GetMouseButtonDown(0))
+                {
+                    state.TriggerDown = true;
+                }
+            }
+            catch { }
+            #endif
 
             PerformRaycast(state);
             HandleInteractions(state);
@@ -96,7 +130,7 @@ namespace DIYVR
 
         private void HandleInteractions(ControllerState state)
         {
-            // 1. Trigger Click (Button 1)
+            // 1. Trigger Click (Button 1 or Screen Tap / Mouse Click)
             if (state.TriggerDown)
             {
                 SetLaserColor(clickColor);
