@@ -9,6 +9,17 @@ const StreamPlayerScreen = () => {
 	const [activeSource, setActiveSource] = useState<string>("unity");
 	const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
+	// Remote / Friend Stream Host State
+	const [targetHost, setTargetHost] = useState<string>(() => {
+		if (typeof window !== "undefined") {
+			const p = new URLSearchParams(window.location.search);
+			return p.get("host") || "";
+		}
+		return "";
+	});
+	const [showHostModal, setShowHostModal] = useState<boolean>(false);
+	const [inputHost, setInputHost] = useState<string>(targetHost);
+
 	// Sync fullscreen state with document fullscreen change
 	useEffect(() => {
 		const handleFsChange = () => {
@@ -36,6 +47,24 @@ const StreamPlayerScreen = () => {
 			document.exitFullscreen().catch(() => {});
 		}
 	};
+
+	const handleApplyHost = (newHost: string) => {
+		const clean = newHost.trim().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+		setTargetHost(clean);
+		setShowHostModal(false);
+		if (typeof window !== "undefined") {
+			const url = new URL(window.location.href);
+			if (clean) {
+				url.searchParams.set("host", clean);
+			} else {
+				url.searchParams.delete("host");
+			}
+			window.history.replaceState({}, "", url.toString());
+		}
+	};
+
+	const resolvedHost = targetHost || (typeof window !== "undefined" ? window.location.hostname || "localhost" : "localhost");
+	const streamUrl = `http://${resolvedHost}:8085/live.mjpg`;
 
 	return (
 		<div className="w-screen h-screen min-h-screen bg-[#0b1f3a] bg-gradient-to-br from-[#121826] to-[#0b1f3a] flex flex-col overflow-hidden text-slate-100">
@@ -72,7 +101,7 @@ const StreamPlayerScreen = () => {
 								: "text-slate-400 hover:text-white"
 						}`}
 					>
-						🖥️ Unity Stream
+						🖥️ {targetHost ? `Stream (${targetHost})` : "Unity Stream"}
 					</button>
 
 					{/* Dynamically detected devices */}
@@ -105,8 +134,25 @@ const StreamPlayerScreen = () => {
 					</button>
 				</div>
 
-				{/* Right: Quick Actions & Browser Fullscreen */}
+				{/* Right: Connect Friend IP & Fullscreen */}
 				<div className="flex items-center gap-2 font-mono text-xs">
+					<button
+						type="button"
+						onClick={() => {
+							setInputHost(targetHost);
+							setShowHostModal(true);
+						}}
+						className={`px-3 py-1.5 rounded-lg border font-semibold flex items-center gap-1.5 transition-all ${
+							targetHost
+								? "bg-purple-600 text-white border-purple-400 shadow-md shadow-purple-500/30"
+								: "bg-[#0b1f3a] text-cyan-400 border-[#1e2e4a] hover:bg-[#152945]"
+						}`}
+						title="Connect to a friend's Unity stream or remote IP"
+					>
+						<span>🌐</span>
+						<span>{targetHost ? `Friend: ${targetHost}` : "Friend's Stream"}</span>
+					</button>
+
 					<button
 						type="button"
 						onClick={toggleBrowserFullscreen}
@@ -125,35 +171,97 @@ const StreamPlayerScreen = () => {
 
 			{/* Main Cinema Viewport (100% of remaining window height) */}
 			<main className="w-full flex-1 min-h-0 p-2 md:p-3 flex items-center justify-center relative overflow-hidden bg-[#0b1f3a]">
-				{(() => {
-					const streamUrl = typeof window !== "undefined" ? `http://${window.location.hostname || "localhost"}:8085/live.mjpg` : "http://localhost:8085/live.mjpg";
-					return activeSource === "unity" ? (
-						<div className="w-full h-full max-w-[98vw] max-h-[88vh] flex items-center justify-center aspect-video">
-							<PlayerScreenCanvas
-								id="unity_pc"
-								streamUrl={streamUrl}
-								needsInteractivity={true}
-							/>
-						</div>
-					) : activeSource === "grid" ? (
-						<div className="w-full h-full max-w-[98vw] max-h-[88vh] flex items-center justify-center">
-							<VideoStreamManager needsInteractivity={true} />
-						</div>
-					) : canvasList[activeSource] ? (
-						<div className="w-full h-full max-w-[98vw] max-h-[88vh] flex items-center justify-center aspect-video">
-							<PlayerScreenCanvas id={activeSource} canvas={canvasList[activeSource]} needsInteractivity={true} />
-						</div>
-					) : (
-						<div className="w-full h-full max-w-[98vw] max-h-[88vh] flex items-center justify-center aspect-video">
-							<PlayerScreenCanvas
-								id="unity_pc"
-								streamUrl={streamUrl}
-								needsInteractivity={true}
-							/>
-						</div>
-					);
-				})()}
+				{activeSource === "unity" ? (
+					<div className="w-full h-full max-w-[98vw] max-h-[88vh] flex items-center justify-center aspect-video">
+						<PlayerScreenCanvas
+							id="unity_pc"
+							streamUrl={streamUrl}
+							needsInteractivity={true}
+						/>
+					</div>
+				) : activeSource === "grid" ? (
+					<div className="w-full h-full max-w-[98vw] max-h-[88vh] flex items-center justify-center">
+						<VideoStreamManager needsInteractivity={true} />
+					</div>
+				) : canvasList[activeSource] ? (
+					<div className="w-full h-full max-w-[98vw] max-h-[88vh] flex items-center justify-center aspect-video">
+						<PlayerScreenCanvas id={activeSource} canvas={canvasList[activeSource]} needsInteractivity={true} />
+					</div>
+				) : (
+					<div className="w-full h-full max-w-[98vw] max-h-[88vh] flex items-center justify-center aspect-video">
+						<PlayerScreenCanvas
+							id="unity_pc"
+							streamUrl={streamUrl}
+							needsInteractivity={true}
+						/>
+					</div>
+				)}
 			</main>
+
+			{/* Friend Stream IP Connector Modal */}
+			{showHostModal && (
+				<div
+					className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+					onClick={() => setShowHostModal(false)}
+				>
+					<div
+						className="relative bg-[#121826] border border-cyan-500/40 rounded-2xl p-6 shadow-2xl flex flex-col w-full max-w-md font-mono"
+						onClick={(e) => e.stopPropagation()}
+					>
+						<h3 className="text-base font-bold text-white mb-1 flex items-center gap-2">
+							<span className="text-cyan-400">🌐</span> Connect Friend's Unity Stream
+						</h3>
+						<p className="text-xs text-slate-400 mb-4">
+							Enter your friend's Wi-Fi IP address or Cloudflare tunnel URL to watch their Unity game live on your screen.
+						</p>
+
+						<div className="mb-4">
+							<label className="block text-[11px] text-slate-300 font-semibold mb-1.5 uppercase">
+								Friend's IP / Hostname:
+							</label>
+							<input
+								type="text"
+								value={inputHost}
+								onChange={(e) => setInputHost(e.target.value)}
+								placeholder="e.g. 192.168.1.45 or friend.trycloudflare.com"
+								className="w-full px-3 py-2 rounded-xl bg-[#0b1f3a] border border-[#1e2e4a] text-white text-sm focus:outline-none focus:border-cyan-400 placeholder:text-slate-500"
+								onKeyDown={(e) => {
+									if (e.key === "Enter") handleApplyHost(inputHost);
+								}}
+							/>
+						</div>
+
+						<div className="flex items-center justify-end gap-2">
+							{targetHost && (
+								<button
+									type="button"
+									onClick={() => {
+										setInputHost("");
+										handleApplyHost("");
+									}}
+									className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+								>
+									Reset to My PC
+								</button>
+							)}
+							<button
+								type="button"
+								onClick={() => setShowHostModal(false)}
+								className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+							>
+								Cancel
+							</button>
+							<button
+								type="button"
+								onClick={() => handleApplyHost(inputHost)}
+								className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold shadow-lg shadow-cyan-500/30"
+							>
+								Connect Stream
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 };
