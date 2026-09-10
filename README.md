@@ -90,17 +90,27 @@ flowchart TD
 
 ---
 
-## 🚀 Quickstart for Team Members
+## 🚀 1-Click Desktop Setup (For Any User / PC)
 
-### 1. Run the Web Platform (Frontend)
-Make sure [Node.js (v18+)](https://nodejs.org/) is installed:
+Anyone can clone and run this on their computer with zero manual configuration:
 
-```bash
-cd simple.webplatform
-npm install
-npm run dev
+### Option A: 1-Click Desktop Icon Setup (Recommended)
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/Arno-1710/Jakkho-VR.git
+   cd Jakkho-VR
+   ```
+2. Double-click **`Install_Desktop_Shortcut.bat`**.
+3. A **`Launch JAKKHO VR Cast`** shortcut will appear on your Windows Desktop. Double-clicking it automatically installs dependencies, detects your local Wi-Fi IP, and opens your browser directly into the stream!
+
+---
+
+### Option B: Run from PowerShell or Terminal
+```powershell
+# In repository root:
+.\start_webcasting.ps1
 ```
-Open **`http://localhost:5173/`** in your browser to view the **JAKKHO Mission Control Homepage**.
+*(Or double-click `start_webcasting.bat` directly from Windows Explorer).*
 
 ---
 
