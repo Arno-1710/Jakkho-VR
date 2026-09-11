@@ -57,7 +57,7 @@ namespace DIYVR
 
         [Header("Browser Auto-Launch")]
         [Tooltip("Automatically open your web browser to the casting screen when Unity enters Play mode")]
-        public bool autoOpenBrowserOnPlay = false;
+        public bool autoOpenBrowserOnPlay = true;
 
         [Tooltip("Web port where the JAKKHO Webcasting Platform is hosted (default: 5173 or 3000)")]
         public int webPlatformPort = 5173;
