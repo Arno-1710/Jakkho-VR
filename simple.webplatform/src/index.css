@@ -8,14 +8,16 @@
   body {
     @apply text-slate-100 antialiased overflow-x-hidden;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    background-color: #0b1f3a;
-    background-image: 
-      linear-gradient(135deg, rgba(18, 24, 38, 0.90) 0%, rgba(11, 31, 58, 0.92) 100%),
-      url("/jakkho_pattern.png");
-    background-size: cover, 512px 320px;
-    background-repeat: no-repeat, repeat;
-    background-attachment: fixed, fixed;
-    background-position: center, center;
+    background-color: #080c16;
+    background-image:
+      radial-gradient(ellipse 90% 45% at 50% 0%, rgba(0, 194, 255, 0.08) 0%, transparent 65%),
+      radial-gradient(ellipse 70% 35% at 50% 100%, rgba(15, 29, 52, 0.45) 0%, transparent 75%),
+      linear-gradient(180deg, rgba(8, 12, 22, 0.78) 0%, rgba(8, 12, 22, 0.92) 100%),
+      url("/vr_grid.svg");
+    background-size: 100% 100%, 100% 100%, 100% 100%, 200px 200px;
+    background-repeat: no-repeat, no-repeat, no-repeat, repeat;
+    background-attachment: fixed, fixed, fixed, fixed;
+    background-position: center top, center bottom, center center, center center;
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     min-height: 100vh;
   }

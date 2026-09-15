@@ -159,7 +159,7 @@ const SelectorSimulations = () => {
 			<div className="w-full max-w-7xl px-4 md:px-8 py-6 flex flex-col items-center gap-8">
 				{/* Welcome Hero Banner */}
 				<div className="w-full rounded-2xl bg-[#121826]/90 border border-[#1e2e4a] p-6 md:p-8 backdrop-blur-xl shadow-2xl relative overflow-hidden">
-					<div className="absolute -top-24 -right-24 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+					<div className="absolute top-0 right-0 w-80 h-full bg-[radial-gradient(ellipse_at_top_right,rgba(0,194,255,0.06),transparent_70%)] pointer-events-none" />
 					<div className="flex flex-col lg:flex-row items-center justify-between gap-6 relative z-10">
 						<div>
 							<div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-mono text-xs font-bold mb-3">
@@ -179,7 +179,7 @@ const SelectorSimulations = () => {
 								to="/streamPlayerScreen"
 								className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-mono font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/25 transition-all text-decoration-none"
 							>
-								<span>🖥️</span>
+								<svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 16.1A5 5 0 0 1 5.9 20M2 12.05A9 9 0 0 1 9.95 20M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/><line x1="2" y1="20" x2="2.01" y2="20"/></svg>
 								<span>Fullscreen Casting</span>
 							</Link>
 						</div>
@@ -635,7 +635,7 @@ const SelectorSimulations = () => {
 					<div className="rounded-xl bg-[#121826]/85 border border-[#1e2e4a] p-4 backdrop-blur-md hover:border-cyan-500/40 transition-all flex flex-col justify-between">
 						<div>
 							<div className="flex items-center justify-between mb-2">
-								<span className="text-lg">🖥️</span>
+								<svg className="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
 								<span className="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 font-mono text-[10px] font-bold border border-cyan-500/30">
 									60 FPS Live
 								</span>
@@ -655,7 +655,7 @@ const SelectorSimulations = () => {
 					<div className="rounded-xl bg-[#121826]/85 border border-[#1e2e4a] p-4 backdrop-blur-md hover:border-cyan-500/40 transition-all flex flex-col justify-between">
 						<div>
 							<div className="flex items-center justify-between mb-2">
-								<span className="text-lg">🕹️</span>
+								<svg className="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
 								<span className="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 font-mono text-[10px] font-bold border border-cyan-500/30">
 									80Hz DMP
 								</span>
@@ -675,7 +675,7 @@ const SelectorSimulations = () => {
 					<div className="rounded-xl bg-[#121826]/85 border border-[#1e2e4a] p-4 backdrop-blur-md hover:border-cyan-500/40 transition-all flex flex-col justify-between">
 						<div>
 							<div className="flex items-center justify-between mb-2">
-								<span className="text-lg">📱</span>
+								<svg className="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="11" rx="4"/><circle cx="8" cy="12.5" r="1.5" fill="currentColor"/><circle cx="16" cy="12.5" r="1.5" fill="currentColor"/><path d="M6 7V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/></svg>
 								<span className="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 font-mono text-[10px] font-bold border border-cyan-500/30">
 									{sortedKeys.length > 0 ? "Connected" : "Auto-Detect"}
 								</span>
@@ -695,7 +695,7 @@ const SelectorSimulations = () => {
 					<div className="rounded-xl bg-[#121826]/85 border border-[#1e2e4a] p-4 backdrop-blur-md hover:border-cyan-500/40 transition-all flex flex-col justify-between">
 						<div>
 							<div className="flex items-center justify-between mb-2">
-								<span className="text-lg">📱</span>
+								<svg className="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="18" r="1"/></svg>
 								<span className="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 font-mono text-[10px] font-bold border border-cyan-500/30">
 									{sortedKeys.length > 1 ? "Connected" : "Standby"}
 								</span>
@@ -715,7 +715,7 @@ const SelectorSimulations = () => {
 				{/* 3-Step Quick Wireless Testing Guide */}
 				<div className="w-full rounded-2xl bg-[#121826]/85 border border-[#1e2e4a] p-6 backdrop-blur-md shadow-xl">
 					<h3 className="font-mono font-bold text-white text-sm mb-3 flex items-center gap-2">
-						<span>⚡</span>
+						<svg className="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
 						<span>Quick Wireless Test Workflow</span>
 					</h3>
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono text-slate-300">

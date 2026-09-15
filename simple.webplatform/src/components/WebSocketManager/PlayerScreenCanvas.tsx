@@ -490,14 +490,18 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 								/>
 							) : streamUrl && streamImgError ? (
 								<div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
-									<div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mb-3 animate-pulse">
-										<span className="text-3xl font-mono text-cyan-400">◆</span>
+									<div className="w-20 h-20 rounded-2xl bg-[#0c1424] border border-cyan-500/40 flex items-center justify-center mb-3 shadow-xl shadow-cyan-500/10 p-2.5 relative">
+										<img src="/jakkho_icon.svg" alt="VR Station" className="w-14 h-14 object-contain" />
+										<span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+											<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+											<span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500 border-2 border-slate-900"></span>
+										</span>
 									</div>
 									<h3 className="font-mono font-bold text-base text-cyan-300 uppercase mb-1">
 										Unity VR Stream Standby
 									</h3>
 									<p className="text-xs text-slate-400 max-w-md font-mono mb-4">
-										Waiting for Unity Play Mode. Attach <code className="text-cyan-300">UnityLiveWebStreamer</code> to your Camera and press Play ▶️ in Unity.
+										Waiting for Unity Play Mode. Attach <code className="text-cyan-300">UnityLiveWebStreamer</code> to your Camera and press Play in Unity.
 									</p>
 									<div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-700 text-xs font-mono text-slate-300">
 										<span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
@@ -564,14 +568,18 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 								/>
 							) : activeStreamUrl && streamImgError ? (
 								<div className="w-full h-full rounded-xl bg-slate-950 flex flex-col items-center justify-center p-6 text-center border border-slate-800 relative overflow-hidden aspect-video">
-									<div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mb-2 animate-pulse">
-										<span className="text-2xl font-mono text-cyan-400">◆</span>
+									<div className="w-14 h-14 rounded-2xl bg-[#0c1424] border border-cyan-500/40 flex items-center justify-center mb-2 shadow-lg shadow-cyan-500/10 p-2 relative">
+										<img src="/jakkho_icon.svg" alt="VR Station" className="w-10 h-10 object-contain" />
+										<span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+											<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+											<span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500 border border-slate-900"></span>
+										</span>
 									</div>
 									<h3 className="font-mono font-bold text-xs text-cyan-300 tracking-wide uppercase mb-1">
 										Unity Stream Standby
 									</h3>
 									<p className="text-[11px] text-slate-400 max-w-xs font-mono mb-2">
-										Press Play ▶️ in Unity to stream live camera
+										Press Play in Unity to stream live camera
 									</p>
 									<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900 border border-slate-700 text-[10px] font-mono text-slate-300">
 										<span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
@@ -623,19 +631,21 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 									<button
 										type="button"
 										onClick={handleStopRecording}
-										className="px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white rounded text-[10px] font-mono font-bold shadow-lg"
+										className="px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white rounded text-[10px] font-mono font-bold shadow-lg flex items-center gap-1"
 										title="Stop & Save Recording"
 									>
-										⏹ Stop REC
+										<span className="w-2 h-2 bg-white rounded-sm"></span>
+										<span>Stop REC</span>
 									</button>
 								) : (
 									<button
 										type="button"
 										onClick={handleStartRecording}
-										className="px-2 py-1 bg-slate-900/90 hover:bg-red-600 text-white rounded text-[10px] font-mono border border-slate-700"
+										className="px-2 py-1 bg-slate-900/90 hover:bg-red-600 text-white rounded text-[10px] font-mono border border-slate-700 flex items-center gap-1 transition-all"
 										title="Record Session"
 									>
-										⏺ Record
+										<span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+										<span>Record</span>
 									</button>
 								)}
 								<button
@@ -644,46 +654,54 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 										e.stopPropagation();
 										setIsStereoMode(!isStereoMode);
 									}}
-									className={`px-2 py-1 rounded text-[10px] font-mono border transition-all ${
+									className={`px-2 py-1 rounded text-[10px] font-mono border transition-all flex items-center gap-1 ${
 										isStereoMode
 											? "bg-purple-600 text-white border-purple-400 font-bold"
 											: "bg-slate-900/90 hover:bg-purple-600 text-white border-slate-700"
 									}`}
 									title="Toggle Cardboard 3D Stereo VR Mode"
 								>
-									🥽 Stereo
+									<svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 9a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-4l-3-3-3 3H5a3 3 0 0 1-3-3V9z"/><circle cx="7.5" cy="12" r="2"/><circle cx="16.5" cy="12" r="2"/></svg>
+									<span>Stereo</span>
 								</button>
 								<button
 									type="button"
 									onClick={handleEnterFullscreenVR}
-									className="px-2 py-1 bg-slate-900/90 hover:bg-purple-600 text-purple-300 rounded text-[10px] font-mono border border-purple-500/40"
+									className="px-2 py-1 bg-slate-900/90 hover:bg-purple-600 text-purple-300 rounded text-[10px] font-mono border border-purple-500/40 flex items-center gap-1 transition-all"
 									title="Direct Mobile Fullscreen Cardboard VR"
 								>
-									📱 VR Headset
+									<svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="18" r="1"/></svg>
+									<span>VR Headset</span>
 								</button>
 								<button
 									type="button"
 									onClick={handleSnapshot}
-									className="px-2 py-1 bg-slate-900/90 hover:bg-cyan-600 text-white rounded text-[10px] font-mono border border-slate-700"
+									className="px-2 py-1 bg-slate-900/90 hover:bg-cyan-600 text-white rounded text-[10px] font-mono border border-slate-700 flex items-center gap-1 transition-all"
 									title="Snapshot"
 								>
-									📷 Snap
+									<svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+									<span>Snap</span>
 								</button>
 								<button
 									type="button"
 									onClick={() => setShowPopup(true)}
-									className="px-2 py-1 bg-slate-900/90 hover:bg-cyan-600 text-white rounded text-[10px] font-mono border border-slate-700"
+									className="px-2 py-1 bg-slate-900/90 hover:bg-cyan-600 text-white rounded text-[10px] font-mono border border-slate-700 flex items-center gap-1 transition-all"
 									title="Enlarge"
 								>
-									⛶ Expand
+									<svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+									<span>Expand</span>
 								</button>
 							</div>
 						</>
 					) : (
 						/* High-tech Standby / Waiting Canvas */
 						<div className="w-full h-full rounded-xl bg-slate-950 flex flex-col items-center justify-center p-6 text-center border border-slate-800 relative overflow-hidden">
-							<div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mb-3 animate-pulse">
-								<span className="text-2xl font-mono text-cyan-400">◆</span>
+							<div className="w-16 h-16 rounded-2xl bg-[#0c1424] border border-cyan-500/40 flex items-center justify-center mb-3 shadow-xl shadow-cyan-500/10 p-2.5 relative">
+								<img src="/jakkho_icon.svg" alt="VR Station" className="w-11 h-11 object-contain" />
+								<span className="absolute -top-1 -right-1 flex h-3 w-3">
+									<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+									<span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 border border-slate-900"></span>
+								</span>
 							</div>
 							<h3 className="font-mono font-bold text-sm text-cyan-300 tracking-wide uppercase mb-1">
 								JAKKHO Standby Stream

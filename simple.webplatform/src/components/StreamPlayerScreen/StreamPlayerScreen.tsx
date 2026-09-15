@@ -121,13 +121,14 @@ const StreamPlayerScreen = () => {
 					<button
 						type="button"
 						onClick={() => setActiveSource("unity")}
-						className={`px-3 py-1 rounded-lg transition-all ${
+						className={`px-3 py-1 rounded-lg transition-all flex items-center gap-1.5 ${
 							activeSource === "unity"
 								? "bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/25"
 								: "text-slate-400 hover:text-white"
 						}`}
 					>
-						🖥️ {targetHost ? `Stream (${targetHost})` : "Unity Stream"}
+						<svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+						<span>{targetHost ? `Stream (${targetHost})` : "Unity Stream"}</span>
 					</button>
 
 					{/* Dynamically detected devices */}
@@ -143,20 +144,22 @@ const StreamPlayerScreen = () => {
 							}`}
 						>
 							<span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-							<span>📱 Headset {idx + 1}</span>
+							<svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="18" r="1"/></svg>
+							<span>Headset {idx + 1}</span>
 						</button>
 					))}
 
 					<button
 						type="button"
 						onClick={() => setActiveSource("grid")}
-						className={`px-3 py-1 rounded-lg transition-all ${
+						className={`px-3 py-1 rounded-lg transition-all flex items-center gap-1.5 ${
 							activeSource === "grid"
 								? "bg-purple-600 text-white font-bold shadow-md shadow-purple-500/25"
 								: "text-slate-400 hover:text-white"
 						}`}
 					>
-						🔲 All Streams
+						<svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+						<span>All Streams</span>
 					</button>
 				</div>
 
@@ -175,7 +178,7 @@ const StreamPlayerScreen = () => {
 						}`}
 						title="Connect to a friend's Unity stream or remote IP"
 					>
-						<span>🌐</span>
+						<svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
 						<span>{targetHost ? `Friend: ${targetHost}` : "Friend's Stream"}</span>
 					</button>
 
@@ -185,7 +188,7 @@ const StreamPlayerScreen = () => {
 						className="px-3 py-1.5 rounded-lg border border-[#1e2e4a] bg-[#0b1f3a] hover:bg-[#152945] text-slate-200 font-semibold flex items-center gap-1.5 transition-all shadow-sm"
 						title="Stream Quality, Port & Diagnostics Settings"
 					>
-						<span>⚙️</span>
+						<svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
 						<span className="hidden md:inline">Settings</span>
 					</button>
 
@@ -199,14 +202,14 @@ const StreamPlayerScreen = () => {
 						}`}
 						title="Toggle Native Browser Fullscreen (Press F)"
 					>
-						<span>⛶</span>
+						<svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
 						<span className="hidden md:inline">{isFullscreen ? "Exit Fullscreen" : "Full Window (F)"}</span>
 					</button>
 				</div>
 			</header>
 
 			{/* Main Cinema Viewport (100% of remaining window height) */}
-			<main className="w-full flex-1 min-h-0 p-2 md:p-3 flex items-center justify-center relative overflow-hidden bg-[#0b1f3a]">
+			<main className="w-full flex-1 min-h-0 p-2 md:p-3 flex items-center justify-center relative overflow-hidden bg-transparent">
 				{activeSource === "unity" ? (
 					<div className="w-full h-full max-w-[98vw] max-h-[88vh] flex items-center justify-center aspect-video">
 						<PlayerScreenCanvas

@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#131d31" />
+      <stop offset="50%" stop-color="#0b1322" />
+      <stop offset="100%" stop-color="#050811" />
+    </linearGradient>
+    <linearGradient id="visorGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e2c47" />
+      <stop offset="100%" stop-color="#0a101d" />
+    </linearGradient>
+    <linearGradient id="cyanGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#00c2ff" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Squircle App Icon Container -->
+  <rect x="16" y="16" width="480" height="480" rx="112" ry="112" fill="url(#bgGrad)" stroke="#1e2e4a" stroke-width="6" />
+  
+  <!-- Subtle Internal Bezel Line -->
+  <rect x="24" y="24" width="464" height="464" rx="104" ry="104" fill="none" stroke="#00c2ff" stroke-opacity="0.18" stroke-width="2" />
+
+  <!-- Top Headset Rigid Strap -->
+  <path d="M 120 226 C 120 110, 392 110, 392 226" fill="none" stroke="#334155" stroke-width="24" stroke-linecap="round" />
+  <path d="M 256 116 L 256 174" fill="none" stroke="#1e293b" stroke-width="18" stroke-linecap="round" />
+
+  <!-- Side Mechanical Mounts -->
+  <rect x="62" y="222" width="34" height="76" rx="10" fill="#1e293b" stroke="#38bdf8" stroke-opacity="0.5" stroke-width="3" />
+  <rect x="416" y="222" width="34" height="76" rx="10" fill="#1e293b" stroke="#38bdf8" stroke-opacity="0.5" stroke-width="3" />
+
+  <!-- VR Headset Visor Body -->
+  <rect x="88" y="184" width="336" height="152" rx="46" fill="url(#visorGrad)" stroke="#00c2ff" stroke-opacity="0.7" stroke-width="4.5" />
+
+  <!-- Front Optical Faceplate Inset -->
+  <rect x="108" y="202" width="296" height="116" rx="32" fill="#060911" stroke="#1e2e4a" stroke-width="3" />
+
+  <!-- Dual Stereo Tracking Optical Sensor Dots -->
+  <circle cx="138" cy="232" r="5.5" fill="#00c2ff" opacity="0.85" />
+  <circle cx="374" cy="232" r="5.5" fill="#00c2ff" opacity="0.85" />
+  <circle cx="138" cy="288" r="5.5" fill="#00c2ff" opacity="0.85" />
+  <circle cx="374" cy="288" r="5.5" fill="#00c2ff" opacity="0.85" />
+
+  <!-- Central JAKKHO Brandmark Emblem on Visor: Chevron Left + Cyan Diamond + Chevron Right -->
+  <!-- Left Chevron -->
+  <polyline points="206,236 226,260 206,284" fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Center Diamond with Cutout -->
+  <g transform="translate(256, 260) rotate(45)" filter="url(#glow)">
+    <rect x="-25" y="-25" width="50" height="50" rx="4" fill="url(#cyanGlow)" />
+    <rect x="-10" y="-10" width="20" height="20" rx="2" fill="#060911" />
+  </g>
+
+  <!-- Right Chevron -->
+  <polyline points="306,236 286,260 306,284" fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- High-Tech Hardware Labels -->
+  <text x="256" y="388" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="26" font-weight="700" fill="#ffffff" letter-spacing="4">JAKKHO VR</text>
+  <text x="256" y="416" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#38bdf8" letter-spacing="3">OPENXR STATION</text>
+</svg>

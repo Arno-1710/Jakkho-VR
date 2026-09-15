@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <defs>
+    <pattern id="minorGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1c2840" stroke-width="1" stroke-opacity="0.5" />
+      <circle cx="40" cy="40" r="0.7" fill="#38bdf8" fill-opacity="0.3" />
+    </pattern>
+  </defs>
+
+  <!-- Minor 40px grid -->
+  <rect width="200" height="200" fill="url(#minorGrid)" />
+
+  <!-- Major 200px boundary lines -->
+  <path d="M 200 0 L 0 0 0 200" fill="none" stroke="#38bdf8" stroke-width="1" stroke-opacity="0.16" />
+
+  <!-- Corner coordinate crosshairs -->
+  <path d="M -5 0 L 5 0 M 0 -5 L 0 5" stroke="#00c2ff" stroke-width="1" stroke-opacity="0.6" />
+  <path d="M 195 0 L 205 0 M 200 -5 L 200 5" stroke="#00c2ff" stroke-width="1" stroke-opacity="0.6" />
+  <path d="M -5 200 L 5 200 M 0 195 L 0 205" stroke="#00c2ff" stroke-width="1" stroke-opacity="0.6" />
+  <path d="M 195 200 L 205 200 M 200 195 L 200 205" stroke="#00c2ff" stroke-width="1" stroke-opacity="0.6" />
+
+  <!-- Center tracker registration marker -->
+  <path d="M 96 100 L 104 100 M 100 96 L 100 104" stroke="#38bdf8" stroke-width="1" stroke-opacity="0.4" />
+  <circle cx="100" cy="100" r="2.5" fill="none" stroke="#00c2ff" stroke-width="0.8" stroke-opacity="0.25" />
+</svg>

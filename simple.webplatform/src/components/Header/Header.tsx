@@ -63,9 +63,38 @@ const Header = ({ onLogoClick }: HeaderProps) => {
 	}, [connectedStatus.isLive]);
 
 	const navItems = [
-		{ label: "Live Casting", path: "/streamPlayerScreen", icon: "🖥️" },
-		{ label: "Multiplayer & Sim", path: "/simulationManager", icon: "🎮" },
-		{ label: "Hub Home", path: "/", icon: "🏠" },
+		{
+			label: "Live Casting",
+			path: "/streamPlayerScreen",
+			icon: (
+				<svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+					<path d="M2 16.1A5 5 0 0 1 5.9 20M2 12.05A9 9 0 0 1 9.95 20M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6" />
+					<line x1="2" y1="20" x2="2.01" y2="20" />
+				</svg>
+			),
+		},
+		{
+			label: "Multiplayer & Sim",
+			path: "/simulationManager",
+			icon: (
+				<svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+					<rect x="2" y="7" width="20" height="11" rx="4" />
+					<circle cx="8" cy="12.5" r="1.5" fill="currentColor" />
+					<circle cx="16" cy="12.5" r="1.5" fill="currentColor" />
+					<path d="M6 7V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2" />
+				</svg>
+			),
+		},
+		{
+			label: "Hub Home",
+			path: "/",
+			icon: (
+				<svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+					<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+					<polyline points="9 22 9 12 15 12 15 22" />
+				</svg>
+			),
+		},
 	];
 
 	return (
