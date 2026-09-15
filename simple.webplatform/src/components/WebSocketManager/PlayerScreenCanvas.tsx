@@ -515,10 +515,12 @@ const PlayerScreenCanvas = ({ canvas, streamUrl, id, isPlaceholder, hideInfos, n
 			{/* Main White Bezel Frame */}
 			<div ref={containerRef} className="relative pt-6 w-full h-full max-w-full aspect-video flex flex-col items-center justify-center p-1">
 				{/* Top JAKKHO Tab Badge */}
-				<div className="absolute top-1 left-1/2 -translate-x-1/2 bg-white px-5 py-1 rounded-t-xl shadow-md border-t-2 border-x-2 border-slate-100 flex items-center justify-center gap-1.5 z-30 pointer-events-auto">
-					<span className="font-extrabold text-slate-900 tracking-wider text-xs font-mono flex items-center gap-1">
-						JAK<span className="text-cyan-500 text-xs">◆</span>KHO
-					</span>
+				<div className="absolute top-1 left-1/2 -translate-x-1/2 bg-white px-4 py-1.5 rounded-t-xl shadow-md border-t-2 border-x-2 border-slate-100 flex items-center justify-center gap-1.5 z-30 pointer-events-auto">
+					<img
+						src="/jakkho_logo_navy.png"
+						alt="JAKKHO"
+						className="h-3.5 w-auto object-contain"
+					/>
 				</div>
 
 				{/* Custom White Frame */}

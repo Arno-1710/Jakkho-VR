@@ -102,11 +102,15 @@ const StreamPlayerScreen = () => {
 						<span className="hidden sm:inline">Mission Control</span>
 					</Link>
 
-					<div className="flex items-center gap-2 border-l border-[#1e2e4a] pl-3">
-						<span className="font-extrabold text-white font-mono text-sm tracking-wider flex items-center gap-1">
-							JAK<span className="text-cyan-400 text-xs">◆</span>KHO
-						</span>
-						<span className="px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-mono text-[10px] font-bold">
+					<div className="flex items-center gap-2.5 border-l border-[#1e2e4a] pl-3">
+						<Link to="/" className="flex items-center hover:opacity-90 transition-opacity">
+							<img
+								src="/jakkho_logo_white.png"
+								alt="JAKKHO VR"
+								className="h-6 md:h-7 w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,194,255,0.25)]"
+							/>
+						</Link>
+						<span className="px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-mono text-[10px] font-bold tracking-wider">
 							FULLSCREEN CASTING
 						</span>
 					</div>

@@ -2,7 +2,8 @@ const Footer = () => {
 	return (
 		<footer className="w-full py-4 px-8 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-[#1e2e4a] bg-[#0b1f3a]/90 backdrop-blur-md text-xs font-mono text-slate-400 mt-auto z-30">
 			<div className="flex items-center gap-2">
-				<span className="font-bold text-white">JAK<span className="text-cyan-400">◆</span>KHO VR</span>
+				<img src="/jakkho_logo_white.png" alt="JAKKHO" className="h-4 w-auto object-contain" />
+				<span className="font-bold text-white text-xs">VR</span>
 				<span>•</span>
 				<span>CADT Innovation & Digital Media Lab</span>
 			</div>

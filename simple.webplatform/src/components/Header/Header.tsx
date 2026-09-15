@@ -76,33 +76,27 @@ const Header = ({ onLogoClick }: HeaderProps) => {
 					<button
 						type="button"
 						onClick={onLogoClick}
-						className="flex items-center gap-2 bg-transparent border-none p-0 cursor-pointer text-left focus:outline-none"
+						className="flex items-center gap-2.5 bg-transparent border-none p-0 cursor-pointer text-left focus:outline-none group"
 					>
-						<div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
-							<span className="text-white font-extrabold text-base font-mono">◆</span>
-						</div>
-						<div>
-							<div className="font-extrabold text-xl tracking-wider text-white font-mono flex items-center gap-1">
-								JAK<span className="text-cyan-400">◆</span>KHO
-							</div>
-							<div className="text-[10px] text-slate-400 uppercase font-mono tracking-widest">
-								VR Platform
-							</div>
-						</div>
+						<img
+							src="/jakkho_logo_white.png"
+							alt="Logo"
+							className="h-7 md:h-8 w-auto object-contain drop-shadow-[0_2px_12px_rgba(0,194,255,0.3)] group-hover:brightness-110 transition-all"
+						/>
+						<span className="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 tracking-wider uppercase">
+							VR Platform
+						</span>
 					</button>
 				) : (
-					<Link to="/" className="flex items-center gap-2 text-decoration-none">
-						<div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
-							<span className="text-white font-extrabold text-base font-mono">◆</span>
-						</div>
-						<div>
-							<div className="font-extrabold text-xl tracking-wider text-white font-mono flex items-center gap-1">
-								JAK<span className="text-cyan-400">◆</span>KHO
-							</div>
-							<div className="text-[10px] text-slate-400 uppercase font-mono tracking-widest">
-								VR Platform
-							</div>
-						</div>
+					<Link to="/" className="flex items-center gap-2.5 text-decoration-none group">
+						<img
+							src="/jakkho_logo_white.png"
+							alt="Logo"
+							className="h-7 md:h-8 w-auto object-contain drop-shadow-[0_2px_12px_rgba(0,194,255,0.3)] group-hover:brightness-110 transition-all"
+						/>
+						<span className="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 tracking-wider uppercase">
+							VR Platform
+						</span>
 					</Link>
 				)}
 
