@@ -156,7 +156,7 @@ const SelectorSimulations = () => {
 		<div className="flex flex-col items-center justify-between min-h-screen w-full">
 			<Header onLogoClick={reset} />
 
-			<div className="w-full max-w-6xl px-4 md:px-8 py-6 flex flex-col items-center gap-8">
+			<div className="w-full max-w-7xl px-4 md:px-8 py-6 flex flex-col items-center gap-8">
 				{/* Welcome Hero Banner */}
 				<div className="w-full rounded-2xl bg-[#121826]/90 border border-[#1e2e4a] p-6 md:p-8 backdrop-blur-xl shadow-2xl relative overflow-hidden">
 					<div className="absolute -top-24 -right-24 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -186,171 +186,161 @@ const SelectorSimulations = () => {
 					</div>
 				</div>
 
-				{/* Main Stage: Live VR Viewport + Live Diagnostics */}
-				<div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-					{/* Live Stream Viewport (7 Cols) */}
-					<div className="lg:col-span-7 flex flex-col gap-3">
-						<div className="flex items-center justify-between px-2">
-							<div className="flex items-center gap-2">
-								<span className="text-base">📡</span>
-								<h2 className="font-mono font-bold text-white text-sm">Live VR Viewport</h2>
-								{isUnityActive ? (
-									<span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono text-[10px] font-bold border border-emerald-500/40">
-										ONLINE
-									</span>
-								) : (
-									<span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-mono text-[10px] font-bold border border-amber-500/40">
-										STANDBY
-									</span>
-								)}
-							</div>
+				{/* Widescreen Full-Width Live VR Viewport */}
+				<div className="w-full flex flex-col gap-3">
+					<div className="flex items-center justify-between px-2">
+						<div className="flex items-center gap-2">
+							<span className="text-base">📡</span>
+							<h2 className="font-mono font-bold text-white text-sm">Live VR Viewport (Widescreen 16:9)</h2>
+							{isUnityActive ? (
+								<span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono text-[10px] font-bold border border-emerald-500/40">
+									ONLINE
+								</span>
+							) : (
+								<span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-mono text-[10px] font-bold border border-amber-500/40">
+									STANDBY
+								</span>
+							)}
+						</div>
 
-							{/* Dynamic Stream Switcher Tabs */}
-							<div className="flex items-center gap-1.5 bg-[#0b1f3a]/90 p-1 rounded-xl border border-[#1e2e4a] text-xs font-mono">
+						{/* Dynamic Stream Switcher Tabs */}
+						<div className="flex items-center gap-1.5 bg-[#0b1f3a]/90 p-1 rounded-xl border border-[#1e2e4a] text-xs font-mono">
+							<button
+								type="button"
+								onClick={() => setSelectedStreamSource("unity")}
+								className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 ${
+									selectedStreamSource === "unity"
+										? "bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/20"
+										: "text-slate-400 hover:text-white"
+								}`}
+							>
+								<span className={`w-1.5 h-1.5 rounded-full ${isUnityActive ? "bg-emerald-400" : "bg-amber-400"}`} />
+								<span>🖥️ Unity Stream</span>
+							</button>
+
+							{/* Dynamically detected device tabs */}
+							{sortedKeys.map((key, idx) => (
 								<button
+									key={key}
 									type="button"
-									onClick={() => setSelectedStreamSource("unity")}
+									onClick={() => setSelectedStreamSource(key)}
 									className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 ${
-										selectedStreamSource === "unity"
+										selectedStreamSource === key
 											? "bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/20"
 											: "text-slate-400 hover:text-white"
 									}`}
 								>
-									<span className={`w-1.5 h-1.5 rounded-full ${isUnityActive ? "bg-emerald-400" : "bg-amber-400"}`} />
-									<span>🖥️ Unity Stream</span>
+									<span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+									<span>📱 Headset {idx + 1}</span>
 								</button>
+							))}
 
-								{/* Dynamically detected device tabs */}
-								{sortedKeys.map((key, idx) => (
-									<button
-										key={key}
-										type="button"
-										onClick={() => setSelectedStreamSource(key)}
-										className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 ${
-											selectedStreamSource === key
-												? "bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/20"
-												: "text-slate-400 hover:text-white"
-										}`}
-									>
-										<span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-										<span>📱 Headset {idx + 1}</span>
-									</button>
-								))}
-
-								{sortedKeys.length === 0 && (
-									<button
-										type="button"
-										onClick={() => setSelectedStreamSource("auto")}
-										className={`px-2.5 py-1 rounded-lg transition-all ${
-											selectedStreamSource === "auto"
-												? "bg-cyan-500 text-slate-950 font-bold"
-												: "text-slate-400 hover:text-white"
-										}`}
-									>
-										📡 Auto-Detect
-									</button>
-								)}
-							</div>
-						</div>
-
-						{/* White Rounded Bezel Frame Container */}
-						<div className="w-full aspect-video max-h-[460px] relative flex items-center justify-center">
-							{(() => {
-								const streamUrl = typeof window !== "undefined" ? `http://${window.location.hostname || "localhost"}:8085/live.mjpg` : "http://localhost:8085/live.mjpg";
-								return selectedStreamSource === "unity" ? (
-									<PlayerScreenCanvas
-										id="unity_pc"
-										streamUrl={streamUrl}
-										needsInteractivity={true}
-									/>
-								) : canvasList[selectedStreamSource] ? (
-									<PlayerScreenCanvas
-										id={selectedStreamSource}
-										canvas={canvasList[selectedStreamSource]}
-										needsInteractivity={true}
-									/>
-								) : (
-									<PlayerScreenCanvas
-										id="unity_pc"
-										streamUrl={streamUrl}
-										needsInteractivity={true}
-									/>
-								);
-							})()}
-						</div>
-
-						{/* Real-time Stream Telemetry Matrix HUD */}
-						<div className="grid grid-cols-3 gap-2 px-1">
-							<div className="p-2.5 rounded-xl bg-[#121826]/85 border border-[#1e2e4a] flex items-center justify-between font-mono text-xs">
-								<span className="text-slate-400">Frame Rate:</span>
-								<span className="text-cyan-400 font-bold flex items-center gap-1">
-									<span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-									{fpsCounter} FPS
-								</span>
-							</div>
-							<div className="p-2.5 rounded-xl bg-[#121826]/85 border border-[#1e2e4a] flex items-center justify-between font-mono text-xs">
-								<span className="text-slate-400">Latency:</span>
-								<span className="text-emerald-400 font-bold">~{latencyMs} ms</span>
-							</div>
-							<div className="p-2.5 rounded-xl bg-[#121826]/85 border border-[#1e2e4a] flex items-center justify-between font-mono text-xs">
-								<span className="text-slate-400">Bitrate:</span>
-								<span className="text-purple-400 font-bold">{bitrateMbps} Mbps</span>
-							</div>
+							{sortedKeys.length === 0 && (
+								<button
+									type="button"
+									onClick={() => setSelectedStreamSource("auto")}
+									className={`px-2.5 py-1 rounded-lg transition-all ${
+										selectedStreamSource === "auto"
+											? "bg-cyan-500 text-slate-950 font-bold"
+											: "text-slate-400 hover:text-white"
+									}`}
+								>
+									📡 Auto-Detect
+								</button>
+							)}
 						</div>
 					</div>
 
-					{/* Hand Controller Telemetry & Quick Diagnostics (5 Cols) */}
-					<div className="lg:col-span-5 flex flex-col gap-4">
-						<div className="flex items-center justify-between px-2">
-							<div className="flex items-center gap-2">
-								<span className="text-base">🕹️</span>
-								<h2 className="font-mono font-bold text-white text-sm">ESP32 Hand Controller Telemetry</h2>
-							</div>
-							<span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
-								80Hz DMP
+					{/* White Rounded Bezel Frame Container (Expanded Full Width) */}
+					<div className="w-full aspect-video max-h-[620px] relative flex items-center justify-center">
+						{(() => {
+							const streamUrl = typeof window !== "undefined" ? `http://${window.location.hostname || "localhost"}:8085/live.mjpg` : "http://localhost:8085/live.mjpg";
+							return selectedStreamSource === "unity" ? (
+								<PlayerScreenCanvas
+									id="unity_pc"
+									streamUrl={streamUrl}
+									needsInteractivity={true}
+								/>
+							) : canvasList[selectedStreamSource] ? (
+								<PlayerScreenCanvas
+									id={selectedStreamSource}
+									canvas={canvasList[selectedStreamSource]}
+									needsInteractivity={true}
+								/>
+							) : (
+								<PlayerScreenCanvas
+									id="unity_pc"
+									streamUrl={streamUrl}
+									needsInteractivity={true}
+								/>
+							);
+						})()}
+					</div>
+
+					{/* Real-time Stream Telemetry Matrix HUD */}
+					<div className="grid grid-cols-3 gap-3 px-1">
+						<div className="p-2.5 rounded-xl bg-[#121826]/85 border border-[#1e2e4a] flex items-center justify-between font-mono text-xs">
+							<span className="text-slate-400">Frame Rate:</span>
+							<span className="text-cyan-400 font-bold flex items-center gap-1">
+								<span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+								{fpsCounter} FPS
 							</span>
 						</div>
+						<div className="p-2.5 rounded-xl bg-[#121826]/85 border border-[#1e2e4a] flex items-center justify-between font-mono text-xs">
+							<span className="text-slate-400">Latency:</span>
+							<span className="text-emerald-400 font-bold">~{latencyMs} ms</span>
+						</div>
+						<div className="p-2.5 rounded-xl bg-[#121826]/85 border border-[#1e2e4a] flex items-center justify-between font-mono text-xs">
+							<span className="text-slate-400">Bitrate:</span>
+							<span className="text-purple-400 font-bold">{bitrateMbps} Mbps</span>
+						</div>
+					</div>
+				</div>
 
-						<div className="rounded-2xl bg-[#121826]/90 border border-[#1e2e4a] p-5 backdrop-blur-md flex flex-col gap-4 shadow-xl">
-							{/* Connection & Bridge Status */}
-							<div className="flex items-center justify-between pb-3 border-b border-[#1e2e4a] text-xs font-mono">
-								<div className="flex items-center gap-2">
-									<span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-									<span className="text-slate-300 font-semibold">Telemetry Bridge:</span>
-								</div>
-								<span className="text-cyan-400 font-bold">COM5 @ 115200 / UDP 8888</span>
-							</div>
+				{/* ESP32 Hand Controller Telemetry Section (Positioned Below Screen View) */}
+				<div className="w-full flex flex-col gap-3">
+					<div className="flex items-center justify-between px-2">
+						<div className="flex items-center gap-2">
+							<span className="text-base">🕹️</span>
+							<h2 className="font-mono font-bold text-white text-sm">ESP32 Hand Controller Telemetry & Joystick Control</h2>
+						</div>
+						<span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+							80Hz DMP &bull; UDP 8888
+						</span>
+					</div>
 
-							{/* Thumb Joystick 2D Cartesian Crosshair with Deadzone boundary */}
-							<div className="flex flex-col gap-2">
+					<div className="rounded-2xl bg-[#121826]/90 border border-[#1e2e4a] p-6 backdrop-blur-md shadow-xl">
+						<div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+							{/* Left Column: Thumb Joystick 2D Crosshair + D-Pad buttons (6 Cols) */}
+							<div className="md:col-span-6 flex flex-col gap-2">
 								<div className="flex justify-between text-xs font-mono text-slate-400">
 									<span>Analog Thumb Joystick</span>
 									<span className="text-cyan-300 font-bold">
 										Raw: ({joyX.toFixed(2)}, {joyY.toFixed(2)}) &bull; Eff: ({effX}, {effY})
 									</span>
 								</div>
-								<div className="w-full h-32 rounded-xl bg-[#081324] border border-[#1e2e4a] flex items-center justify-center relative overflow-hidden">
+								<div className="w-full h-36 rounded-xl bg-[#081324] border border-[#1e2e4a] flex items-center justify-center relative overflow-hidden">
 									{/* Crosshair axes */}
 									<div className="absolute w-full h-[1px] bg-[#1e2e4a]" />
 									<div className="absolute h-full w-[1px] bg-[#1e2e4a]" />
 									
 									{/* Outer boundary */}
-									<div className="w-24 h-24 rounded-full border border-dashed border-cyan-500/20 absolute" />
+									<div className="w-28 h-28 rounded-full border border-dashed border-cyan-500/20 absolute" />
 
 									{/* Deadzone boundary overlay */}
 									<div
 										className="rounded-full border border-red-500/40 bg-red-500/5 absolute pointer-events-none transition-all"
 										style={{
-											width: `${deadzone * 90}px`,
-											height: `${deadzone * 90}px`,
+											width: `${deadzone * 110}px`,
+											height: `${deadzone * 110}px`,
 										}}
 									/>
 
 									{/* Joystick Knob Dot */}
 									<div
-										className="w-7 h-7 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-500 shadow-lg shadow-cyan-500/50 absolute transition-all duration-75 flex items-center justify-center text-[10px] text-slate-950 font-bold cursor-grab"
+										className="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-500 shadow-lg shadow-cyan-500/50 absolute transition-all duration-75 flex items-center justify-center text-xs text-slate-950 font-bold cursor-grab"
 										style={{
-											transform: `translate(${joyX * 45}px, ${-joyY * 45}px)`,
+											transform: `translate(${joyX * 52}px, ${-joyY * 52}px)`,
 										}}
 									>
 										🕹️
@@ -358,12 +348,12 @@ const SelectorSimulations = () => {
 								</div>
 
 								{/* Quick D-Pad Sim Buttons for Testing */}
-								<div className="grid grid-cols-4 gap-1.5 mt-1">
+								<div className="grid grid-cols-4 gap-2 mt-1">
 									<button
 										type="button"
 										onMouseDown={() => setJoyY(1)}
 										onMouseUp={() => setJoyY(0)}
-										className="py-1 bg-[#0b1f3a] hover:bg-[#152945] text-slate-300 rounded font-mono text-[10px] border border-[#1e2e4a]"
+										className="py-1.5 bg-[#0b1f3a] hover:bg-[#152945] text-slate-300 rounded-lg font-mono text-xs border border-[#1e2e4a] transition-all"
 									>
 										▲ Up
 									</button>
@@ -371,7 +361,7 @@ const SelectorSimulations = () => {
 										type="button"
 										onMouseDown={() => setJoyY(-1)}
 										onMouseUp={() => setJoyY(0)}
-										className="py-1 bg-[#0b1f3a] hover:bg-[#152945] text-slate-300 rounded font-mono text-[10px] border border-[#1e2e4a]"
+										className="py-1.5 bg-[#0b1f3a] hover:bg-[#152945] text-slate-300 rounded-lg font-mono text-xs border border-[#1e2e4a] transition-all"
 									>
 										▼ Down
 									</button>
@@ -379,7 +369,7 @@ const SelectorSimulations = () => {
 										type="button"
 										onMouseDown={() => setJoyX(-1)}
 										onMouseUp={() => setJoyX(0)}
-										className="py-1 bg-[#0b1f3a] hover:bg-[#152945] text-slate-300 rounded font-mono text-[10px] border border-[#1e2e4a]"
+										className="py-1.5 bg-[#0b1f3a] hover:bg-[#152945] text-slate-300 rounded-lg font-mono text-xs border border-[#1e2e4a] transition-all"
 									>
 										◀ Left
 									</button>
@@ -387,61 +377,73 @@ const SelectorSimulations = () => {
 										type="button"
 										onMouseDown={() => setJoyX(1)}
 										onMouseUp={() => setJoyX(0)}
-										className="py-1 bg-[#0b1f3a] hover:bg-[#152945] text-slate-300 rounded font-mono text-[10px] border border-[#1e2e4a]"
+										className="py-1.5 bg-[#0b1f3a] hover:bg-[#152945] text-slate-300 rounded-lg font-mono text-xs border border-[#1e2e4a] transition-all"
 									>
 										▶ Right
 									</button>
 								</div>
 							</div>
 
-							{/* Physical Buttons Indicators */}
-							<div className="flex flex-col gap-2 pt-2 border-t border-[#1e2e4a]">
-								<span className="text-xs font-mono text-slate-400">Tactile Action Buttons</span>
-								<div className="grid grid-cols-3 gap-2 font-mono text-xs">
-									<button
-										type="button"
-										onMouseDown={() => setTriggerPressed(true)}
-										onMouseUp={() => setTriggerPressed(false)}
-										className={`p-2 rounded-xl border flex flex-col items-center gap-1 transition-all ${
-											triggerPressed
-												? "bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-md shadow-cyan-500/20"
-												: "bg-[#0b1f3a]/80 border-[#1e2e4a] text-slate-400"
-										}`}
-									>
-										<span className="text-sm">🎯</span>
-										<span className="font-bold text-[11px]">Trigger</span>
-										<span className="text-[9px] text-slate-500">GPIO 25</span>
-									</button>
+							{/* Right Column: Connection Bridge + Tactile Action Buttons (6 Cols) */}
+							<div className="md:col-span-6 flex flex-col gap-4">
+								{/* Connection & Bridge Status */}
+								<div className="flex items-center justify-between p-3 rounded-xl bg-[#081324] border border-[#1e2e4a] text-xs font-mono">
+									<div className="flex items-center gap-2">
+										<span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+										<span className="text-slate-300 font-semibold">Telemetry Bridge:</span>
+									</div>
+									<span className="text-cyan-400 font-bold">COM5 @ 115200 / UDP 8888</span>
+								</div>
 
-									<button
-										type="button"
-										onMouseDown={() => setGripPressed(true)}
-										onMouseUp={() => setGripPressed(false)}
-										className={`p-2 rounded-xl border flex flex-col items-center gap-1 transition-all ${
-											gripPressed
-												? "bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-md shadow-cyan-500/20"
-												: "bg-[#0b1f3a]/80 border-[#1e2e4a] text-slate-400"
-										}`}
-									>
-										<span className="text-sm">✊</span>
-										<span className="font-bold text-[11px]">Grip Grab</span>
-										<span className="text-[9px] text-slate-500">GPIO 26</span>
-									</button>
+								{/* Physical Buttons Indicators */}
+								<div className="flex flex-col gap-2">
+									<span className="text-xs font-mono text-slate-400">Tactile Action Buttons</span>
+									<div className="grid grid-cols-3 gap-2.5 font-mono text-xs">
+										<button
+											type="button"
+											onMouseDown={() => setTriggerPressed(true)}
+											onMouseUp={() => setTriggerPressed(false)}
+											className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${
+												triggerPressed
+													? "bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-md shadow-cyan-500/20"
+													: "bg-[#0b1f3a]/80 border-[#1e2e4a] text-slate-400"
+											}`}
+										>
+											<span className="text-base">🎯</span>
+											<span className="font-bold text-xs">Trigger</span>
+											<span className="text-[10px] text-slate-500">GPIO 25</span>
+										</button>
 
-									<button
-										type="button"
-										onMouseDown={() => setRecenterPressed(true)}
-										onMouseUp={() => setRecenterPressed(false)}
-										className={`p-2 rounded-xl border flex flex-col items-center gap-1 transition-all ${
-											recenterPressed
-												? "bg-amber-500/20 border-amber-400 text-amber-300 shadow-md shadow-amber-500/20"
-												: "bg-[#0b1f3a]/80 border-[#1e2e4a] text-slate-400"
-										}`}
-									>
-										<span className="text-sm">🔄</span>
-										<span className="font-bold text-[11px]">Recenter</span>
-										<span className="text-[9px] text-slate-500">GPIO 27</span>
-									</button>
+										<button
+											type="button"
+											onMouseDown={() => setGripPressed(true)}
+											onMouseUp={() => setGripPressed(false)}
+											className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${
+												gripPressed
+													? "bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-md shadow-cyan-500/20"
+													: "bg-[#0b1f3a]/80 border-[#1e2e4a] text-slate-400"
+											}`}
+										>
+											<span className="text-base">✊</span>
+											<span className="font-bold text-xs">Grip Grab</span>
+											<span className="text-[10px] text-slate-500">GPIO 26</span>
+										</button>
+
+										<button
+											type="button"
+											onMouseDown={() => setRecenterPressed(true)}
+											onMouseUp={() => setRecenterPressed(false)}
+											className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${
+												recenterPressed
+													? "bg-amber-500/20 border-amber-400 text-amber-300 shadow-md shadow-amber-500/20"
+													: "bg-[#0b1f3a]/80 border-[#1e2e4a] text-slate-400"
+											}`}
+										>
+											<span className="text-base">🔄</span>
+											<span className="font-bold text-xs">Recenter</span>
+											<span className="text-[10px] text-slate-500">GPIO 27</span>
+										</button>
+									</div>
 								</div>
 							</div>
 						</div>
